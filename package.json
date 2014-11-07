@@ -1,0 +1,11 @@
+{
+  "name": "hap",
+  "version": "0.0.0",
+  "description": "Hypertext Against People--A Cards Against Humanity clone.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Howard Chung",
+  "license": "ISC"
+}
