@@ -8,7 +8,7 @@ var router = express();
 var server = http.createServer(router);
 var io = socketio.listen(server);
 
-router.use(express.static(path.resolve(__dirname, 'client')));
+router.use(express.static(path.resolve(__dirname, 'public')));
 var messages = [];
 var sockets = [];
 
@@ -48,7 +48,7 @@ io.on('connection', function(socket) {
 function updateRoster() {
   async.map(
     sockets,
-    function(socket, callback){
+    function(socket, callback) {
       callback(null, socket.name);
     },
     function(err, names) {
