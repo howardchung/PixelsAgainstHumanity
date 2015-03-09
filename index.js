@@ -40,7 +40,7 @@ io.on('connection', function(socket) {
   });
 
   socket.on('identify', function(name) {
-    socket.name = String(name || 'Anonymous')
+    socket.name = String(name || 'Anonymous');
     updateRoster();
   });
 });
@@ -63,7 +63,7 @@ function broadcast(event, data) {
   });
 }
 
-server.listen(process.env.PORT || 3000, function() {
+server.listen(process.env.PORT || 5000, function() {
   var addr = server.address();
-  console.log("Chat server listening at", addr.address + ":" + addr.port);
+  console.log("Server listening at", addr.address + ":" + addr.port);
 });
