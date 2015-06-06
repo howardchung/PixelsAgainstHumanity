@@ -9,10 +9,10 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     var socket = io.connect();
-    //client-known state
+    //client gets state that server publishes
     var hand = null;
     var board = null;
-    var roster = [];
+    var players = [];
     //array of player objects
     //each player has score, list of cards won
     //React.createElement to draw DOM components
@@ -30,7 +30,7 @@
       //server pushed new roster
       console.log('roster');
       console.log(names);
-      roster = names;
+      players = names;
       //list of players
       //update bound dom element ("players")
     });

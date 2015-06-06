@@ -10,38 +10,58 @@ var server = app.listen(process.env.PORT || 5000, function() {
 });
 var io = require('socket.io')(server);
 app.use(express.static(path.resolve(__dirname, 'public')));
+//private server state
 var black = cards.filter(function(c) {
-  return c.cardType === "Q"
+  return c.cardType === "Q";
 });
 var white = cards.filter(function(c) {
-  return c.cardType === "A"
+  return c.cardType === "A";
 });
 var messages = [];
 var players = [];
+//published state
 var board = {
   black: null,
   czar: null,
-  turn: 0
+  turn: 0,
+  black_remaining: null,
+  white_remaining: null
 };
-
 //GAME START
 //shuffle decks
-//server deals hand to all players
-//EACH TURN
-//server draws top black card
-//each turn, keep track of whether player has moved
+function shuffle(o) {
+  for (var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+  return o;
+}
+shuffle(black);
+shuffle(white);
+
+function replenish() {
+    //server deals hand to all players from white
+    players.forEach(function(p) {
+      var hand_max = 10;
+      while (p.hand.length < hand_max) {
+        p.hand.push(white.pop());
+      }
+    });
+  }
+  //EACH TURN
+  //server draws top black card
+board.black = black.pop();
+//each turn, keep track of whether each player has moved
 //each player has a hand, score
 //game state
 //server manages deck, hand state of all players
 //server will inform players of their hand state+board state
 //server replenishes player hands
-
 //io.emit broadcasts to all clients
 //socket.emit messages only the particular socket
 io.on('connection', function(socket) {
   //new player joined
-  players.push(socket);
   console.log(socket.id);
+  socket.score = 0;
+  socket.hand = [];
+  players.push(socket);
   updatePlayers();
   //set up handler for player disconnect
   socket.on('disconnect', function() {
