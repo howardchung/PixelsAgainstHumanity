@@ -16,6 +16,9 @@
     //array of player objects
     //each player has score, list of cards won
     //React.createElement to draw DOM components
+    //glyphicon glyphicon-unchecked
+    //glyphicon glyphicon-ok
+    //handle select 2/3 case (order?)
     socket.on('connect', function() {
       console.log('connected');
       //TODO allow user to set name?
@@ -25,7 +28,7 @@
     socket.on('play_recvd', function(msg) {
       console.log(msg);
     });
-    socket.on('hand', function(hand){
+    socket.on('hand', function(hand) {
       console.log("hand");
       console.log(hand);
     });
@@ -46,8 +49,12 @@
 </head>
 
 <body>
-  <div class="container">
-    <h1>Hypertext Against People</h1> </div>
+  <div class="container text-center">
+    <h1>Hypertext Against People</h1>
+    <div id="board"></div>
+    <div id="hand"></div>
+    <div id="roster"></div>
+  </div>
 </body>
 
 </html>
