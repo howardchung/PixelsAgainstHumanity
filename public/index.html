@@ -21,9 +21,13 @@
       //TODO allow user to set name?
       socket.emit('name', "player_name");
     });
-    //new game event
-    socket.on('message', function(msg) {
+    //server received play
+    socket.on('play_recvd', function(msg) {
       console.log(msg);
+    });
+    socket.on('hand', function(hand){
+      console.log("hand");
+      console.log(hand);
     });
     //new roster
     socket.on('roster', function(names) {
