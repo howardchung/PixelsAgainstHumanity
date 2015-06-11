@@ -5,56 +5,158 @@
   <title>Hypertext Against People</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.min.css" rel="stylesheet">
-  <script src="//cdn.jsdelivr.net/react/latest/react.min.js"></script>
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    var socket = io.connect();
-    //client gets state that server publishes
-    var hand = null;
-    var board = null;
-    var players = [];
-    //array of player objects
-    //each player has score, list of cards won
-    //React.createElement to draw DOM components
-    //glyphicon glyphicon-unchecked
-    //glyphicon glyphicon-ok
-    //handle select 2/3 case (order?)
-    socket.on('connect', function() {
-      console.log('connected');
-      //TODO allow user to set name?
-      socket.emit('name', "player_name");
-    });
-    //server received play
-    socket.on('play_recvd', function(msg) {
-      console.log(msg);
-    });
-    socket.on('hand', function(hand) {
-      console.log("hand");
-      console.log(hand);
-    });
-    //new roster
-    socket.on('roster', function(names) {
-      //server pushed new roster
-      console.log('roster');
-      console.log(names);
-      players = names;
-      //list of players
-      //update bound dom element ("players")
-    });
-    //players click card in hand to play
-    //server detects when all players have played card
-    //card czar selects winning card (rotate among players)]
-    //winning card player is revealed and score added
-  </script>
+  <link href='http://fonts.googleapis.com/css?family=Roboto:500,500italic,900|Montserrat:700' rel='stylesheet' type='text/css'>
+  <style>
+    body {
+      background: #777;
+      color: #000;
+      font-family: "Helvetica Neue", "Roboto", Helvetica, Arial, "Lucida Grande", sans-serif;
+      font-size: 16pt;
+      font-weight: 500;
+      text-align: center;
+      text-rendering: optimizeLegibility;
+    }
+    .cards {
+      background: #FFF;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, .5);
+      display: block;
+      margin: 10px auto;
+      max-width: 600px;
+      text-decoration: none;
+      overflow: hidden;
+      padding-top: 1em;
+      text-align: left;
+    }
+    .black {
+      background: #000;
+      color: #FFF;
+    }
+  </style>
 </head>
 
 <body>
   <div class="container text-center">
     <h1>Hypertext Against People</h1>
     <div id="board"></div>
-    <div id="hand"></div>
+    <div id="hand"> </div>
     <div id="roster"></div>
+    <button onClick="start()">Start</button>
   </div>
 </body>
+<script src="//cdn.jsdelivr.net/react/latest/react.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  var socket = io.connect();
+  socket.on('connect', function() {
+    console.log('connected');
+    //TODO allow user to set name?
+    socket.emit('name', socket.id);
+  });
+
+  function start() {
+    socket.emit('start');
+  }
+
+  function decodeHTML(s) {
+      var str, temp = document.createElement('p');
+      temp.innerHTML = s;
+      str = temp.textContent || temp.innerText;
+      temp = null;
+      return str;
+    }
+    //TODO card, can be playable, display, black/white, selectwinner
+    //TODO handle select 2/3 case (order?)
+    //glyphicon glyphicon-unchecked
+    //glyphicon glyphicon-ok
+    //TODO click handler on playable cards to play
+    /*
+          <a href="javascript:submitCards()" class="black">
+          <div id="submit-button" class="content">Black card.</div>
+        </a>
+        */
+  var hand = React.createClass({
+    getInitialState: function() {
+      socket.on('hand', function(hand) {
+        console.log("hand");
+        console.log(hand);
+        this.setState({
+          hand: hand
+        });
+      }.bind(this));
+      return {
+        hand: []
+      };
+    },
+    componentDidMount: function() {
+      console.log("hand mounted");
+    },
+    render: function() {
+      return React.createElement("div", {}, this.state.hand.map(function(c) {
+        return (React.createElement("div", {
+          className: "cards"
+        }, [React.createElement("i", {
+          className: "glyphicon glyphicon-unchecked",
+          key: "glyphicon-" + c
+        }), decodeHTML(c)]));
+      }));
+    }
+  });
+  var roster = React.createClass({
+    getInitialState: function() {
+      socket.on('roster', function(roster) {
+        //server pushed new roster
+        console.log('roster');
+        console.log(roster);
+        this.setState({
+          roster: roster
+        })
+      }.bind(this));
+      return {
+        roster: []
+      };
+    },
+    componentDidMount: function() {
+      console.log("roster mounted");
+    },
+    render: function() {
+      return React.createElement("ul", null, this.state.roster.map(function(p) {
+        return (React.createElement("li", null, p.name + " " + p.score));
+      }));
+    }
+  });
+  //render board
+  //black card and played white cards
+  //game state
+  var board = React.createClass({
+    getInitialState: function() {
+      socket.on('board', function(board) {
+        console.log("board");
+        console.log(board);
+        this.setState({
+          board: board
+        });
+      }.bind(this));
+      return {
+        board: {}
+      };
+    },
+    componentDidMount: function() {
+      console.log("board mounted");
+    },
+    render: function() {
+      return React.createElement("div", {}, [React.createElement("div", null, JSON.stringify(this.state.board)), React.createElement("div", {
+        className: "cards black"
+      }, decodeHTML(this.state.board.black.text)), this.board.whites.map(function(w) {
+        return React.createElement("a", {
+          className: "cards"
+        }, decodeHTML(w.text))
+      })]);
+    }
+  });
+  React.render(React.createElement(hand, null), document.getElementById("hand"));
+  React.render(React.createElement(roster, null), document.getElementById("roster"));
+  React.render(React.createElement(board, null), document.getElementById("board"));
+</script>
 
 </html>

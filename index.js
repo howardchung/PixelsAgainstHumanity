@@ -31,8 +31,6 @@ var board = {
 };
 shuffle(black);
 shuffle(white);
-//TODO start game when a player/leader wants to
-runTurn();
 io.on('connection', function(socket) {
   //new player joined
   console.log("%s joined", socket.id);
@@ -46,6 +44,9 @@ io.on('connection', function(socket) {
     players.splice(players.indexOf(socket), 1);
     console.log("%s left", socket.id);
     updateRoster();
+  });
+  socket.on('start', function() {
+    runTurn();
   });
   socket.on('play', function(msg) {
     //index of card in hand played
@@ -85,7 +86,7 @@ function runTurn() {
   board.white_remaining = white.length;
   //notify players of board state
   io.emit('board', board);
-  //notify players of player list/hand/board state
+  //notify players of player list/hand
   updateRoster();
 }
 
@@ -95,7 +96,10 @@ function updateRoster() {
     //notify each player of their hand
     console.log(p.hand);
     p.emit('hand', p.hand);
-    cb(null, p.name);
+    cb(null, {
+      name: p.name,
+      score: p.score
+    });
   }, function(err, names) {
     if (err) {
       console.log(err);
