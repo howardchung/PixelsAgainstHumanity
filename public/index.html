@@ -3,78 +3,49 @@
 
 <head>
   <title>Hypertext Against People</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.min.css" rel="stylesheet">
-  <link href='http://fonts.googleapis.com/css?family=Roboto:500,500italic,900|Montserrat:700' rel='stylesheet' type='text/css'>
-  <style>
-    body {
-      background: #777;
-      color: #000;
-      font-family: "Helvetica Neue", "Roboto", Helvetica, Arial, "Lucida Grande", sans-serif;
-      font-size: 16pt;
-      font-weight: 500;
-      text-align: center;
-      text-rendering: optimizeLegibility;
-    }
-    .cards {
-      background: #FFF;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, .5);
-      display: block;
-      margin: 10px auto;
-      max-width: 600px;
-      text-decoration: none;
-      overflow: hidden;
-      padding-top: 1em;
-      text-align: left;
-    }
-    .black {
-      background: #000;
-      color: #FFF;
-    }
-  </style>
-</head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" /> </head>
 
 <body>
-  <div class="container text-center">
-    <h1>Hypertext Against People</h1>
-    <button onClick="start()">Start</button>
-    <div id="roster"></div>
-    <div id="board"></div>
-    <div id="hand"> </div>
-  </div>
+  <div class="container text-center" id="react"> </div>
 </body>
+<link href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.min.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto:500,500italic,900|Montserrat:700' rel='stylesheet' type='text/css'>
+<style>
+  body {
+    background: #777;
+    color: #000;
+    font-family: "Helvetica Neue", "Roboto", Helvetica, Arial, "Lucida Grande", sans-serif;
+    font-size: 16pt;
+    font-weight: 500;
+    text-align: center;
+    text-rendering: optimizeLegibility;
+  }
+  .cards {
+    background: #FFF;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, .5);
+    margin: 10px auto;
+    max-width: 600px;
+    padding: 1em;
+    text-align: left;
+  }
+  .black {
+    background: #000;
+    color: #FFF;
+  }
+</style>
 <script src="//cdn.jsdelivr.net/react/latest/react.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
   var socket = io.connect();
   socket.on('connect', function() {
     console.log('connected');
-    //TODO allow user to set name?
-    socket.emit('name', socket.id);
   });
-
-  function start() {
-    socket.emit('start');
-  }
-
-  function decodeHTML(s) {
-      var str, temp = document.createElement('p');
-      temp.innerHTML = s;
-      str = temp.textContent || temp.innerText;
-      temp = null;
-      return str;
-    }
-    //TODO card, can be playable, display, black/white, selectwinner
-    //TODO handle select 2/3 case (order?)
-    //glyphicon glyphicon-unchecked
-    //glyphicon glyphicon-ok
-    //TODO click handler on playable cards to play
-    /*
-          <a href="javascript:submitCards()" class="black">
-          <div id="submit-button" class="content">Black card.</div>
-        </a>
-        */
+  //TODO card, can be playable, display, black/white, selectwinner
+  //TODO handle select 2/3 case (order?)
+  //glyphicon glyphicon-unchecked
+  //glyphicon glyphicon-ok
+  //TODO click handler on playable cards to play
   var hand = React.createClass({
     getInitialState: function() {
       socket.on('hand', function(hand) {
@@ -120,14 +91,12 @@
       console.log("roster mounted");
     },
     render: function() {
-      return React.createElement("ul", null, this.state.roster.map(function(p) {
-        return (React.createElement("li", null, p.name + " " + p.score));
+      //TODO mark the czar
+      return React.createElement("div", null, this.state.roster.map(function(p) {
+        return (React.createElement("div", null, p.name + " " + p.score));
       }));
     }
   });
-  //render board
-  //black card and played white cards
-  //game state
   var board = React.createClass({
     getInitialState: function() {
       socket.on('board', function(board) {
@@ -148,9 +117,15 @@
       console.log("board mounted");
     },
     render: function() {
-      return React.createElement("div", {}, [React.createElement("div", null, JSON.stringify(this.state.board)), React.createElement("div", {
+      return React.createElement("div", {}, [
+        //TODO display current game state
+        React.createElement("div", null, JSON.stringify(this.state.board)),
+
+      React.createElement("div", {
           className: "cards black"
         }, decodeHTML(this.state.board.black.text))
+        //TODO display played white cards
+
       /*
       this.board.whites.map(function(w) {
         return React.createElement("a", {
@@ -161,9 +136,46 @@
       ]);
     }
   });
-  React.render(React.createElement(hand, null), document.getElementById("hand"));
-  React.render(React.createElement(roster, null), document.getElementById("roster"));
-  React.render(React.createElement(board, null), document.getElementById("board"));
+  var react = React.createClass({
+    render: function() {
+      return React.createElement("div", null, [
+        React.createElement("h1", null, "Hypertext Against People"),
+        React.createElement("button", {
+          onClick: start
+        }, "Start"),
+        React.createElement("input", {
+          type: "text",
+          onInput: name,
+          id: "name"
+        }),
+        React.createElement(roster),
+        React.createElement(board),
+        React.createElement(hand)
+        ]);
+      //hand
+      //roster
+      //board
+      //start
+      //namechange
+    }
+  });
+  React.render(React.createElement(react, null), document.getElementById("react"));
+
+  function start() {
+    socket.emit('start');
+  }
+
+  function name() {
+    socket.emit('name', document.getElementById('name').value);
+  }
+
+  function decodeHTML(s) {
+    var str, temp = document.createElement('p');
+    temp.innerHTML = s;
+    str = temp.textContent || temp.innerText;
+    temp = null;
+    return str;
+  }
 </script>
 
 </html>

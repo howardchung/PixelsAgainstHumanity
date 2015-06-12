@@ -11,11 +11,11 @@ var server = app.listen(process.env.PORT || 5000, function() {
 var io = require('socket.io')(server);
 app.use(express.static(path.resolve(__dirname, 'public')));
 //private server state
-var deck = "Base";
-var black = cards[deck].black.map(function(c) {
+var deck = cards["Base"];
+var black = deck.black.map(function(c) {
   return cards.blackCards[c];
 });
-var white = cards[deck].white.map(function(c) {
+var white = deck.white.map(function(c) {
   return cards.whiteCards[c];
 });
 //TODO implement multiple rooms
@@ -37,7 +37,6 @@ io.on('connection', function(socket) {
   socket.score = 0;
   socket.hand = [];
   players.push(socket);
-  replenish();
   updateRoster();
   //set up handler for player disconnect
   socket.on('disconnect', function() {
@@ -46,6 +45,8 @@ io.on('connection', function(socket) {
     updateRoster();
   });
   socket.on('start', function() {
+    //TODO disable start after game already started
+    replenish();
     runTurn();
   });
   socket.on('play', function(msg) {
@@ -63,7 +64,7 @@ io.on('connection', function(socket) {
     //czar selects a winning card
     //reveal winner, increment score
     //start the next turn
-    //TODO 
+    //TODO implement
   });
   socket.on('name', function(name) {
     //player changing name
