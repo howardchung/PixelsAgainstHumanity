@@ -23,7 +23,7 @@ var players = [];
 //published state
 var board = {
   black: null,
-  whites: [],
+  whites: {},
   czar: -1,
   turn: 0,
   black_remaining: null,

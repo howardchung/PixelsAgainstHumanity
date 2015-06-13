@@ -33,6 +33,9 @@
     background: #000;
     color: #FFF;
   }
+  .hidden {
+    display: none;
+  }
 </style>
 <script src="//cdn.jsdelivr.net/react/latest/react.js"></script>
 <script src="/socket.io/socket.io.js"></script>
@@ -43,8 +46,6 @@
   });
   //TODO card, can be playable, display, black/white, selectwinner
   //TODO handle select 2/3 case (order?)
-  //glyphicon glyphicon-unchecked
-  //glyphicon glyphicon-ok
   //TODO click handler on playable cards to play
   var hand = React.createClass({
     getInitialState: function() {
@@ -63,13 +64,12 @@
       console.log("hand mounted");
     },
     render: function() {
-      return React.createElement("div", {}, this.state.hand.map(function(c) {
-        return (React.createElement("div", {
-          className: "cards"
-        }, [React.createElement("i", {
-          className: "glyphicon glyphicon-unchecked",
-          key: "glyphicon-" + c
-        }), decodeHTML(c)]));
+      return React.createElement("div", {}, this.state.hand.map(function(c, i) {
+        return renderCard({
+          text: c,
+          id: i,
+          type: "playable"
+        });
       }));
     }
   });
@@ -92,6 +92,8 @@
     },
     render: function() {
       //TODO mark the czar
+      //TODO mark played
+      //green circle
       return React.createElement("div", null, this.state.roster.map(function(p) {
         return (React.createElement("div", null, p.name + " " + p.score));
       }));
@@ -109,7 +111,7 @@
       return {
         board: {
           black: {},
-          whites: []
+          whites: {}
         }
       };
     },
@@ -117,23 +119,23 @@
       console.log("board mounted");
     },
     render: function() {
+      console.log(JSON.stringify(this.state.board));
       return React.createElement("div", {}, [
         //TODO display current game state
-        React.createElement("div", null, JSON.stringify(this.state.board)),
-
-      React.createElement("div", {
-          className: "cards black"
-        }, decodeHTML(this.state.board.black.text))
-        //TODO display played white cards
-
-      /*
-      this.board.whites.map(function(w) {
-        return React.createElement("a", {
-          className: "cards"
-        }, decodeHTML(w.text))
-      })
-      */
-      ]);
+        renderCard({
+          text: this.state.board.black.text,
+          type: "black"
+        }),
+        /*
+        this.state.board.whites.map(function(w, i) {
+          renderCard({
+            text: w.text,
+            id: i,
+            type: "select"
+          });
+        })
+        */
+        ]);
     }
   });
   var react = React.createClass({
@@ -152,11 +154,6 @@
         React.createElement(board),
         React.createElement(hand)
         ]);
-      //hand
-      //roster
-      //board
-      //start
-      //namechange
     }
   });
   React.render(React.createElement(react, null), document.getElementById("react"));
@@ -169,12 +166,54 @@
     socket.emit('name', document.getElementById('name').value);
   }
 
+  function play() {
+    //TODO implement, player playing this array of cards
+  }
+
+  function select() {
+    //TODO implement, for czar
+  }
+
   function decodeHTML(s) {
     var str, temp = document.createElement('p');
     temp.innerHTML = s;
     str = temp.textContent || temp.innerText;
     temp = null;
     return str;
+  }
+
+  function renderCard(options) {
+    //options.text
+    //options.type
+    //options.id
+    var children = [decodeHTML(options.text)];
+    var checkbox = React.createClass({
+      render: function() {
+        return React.createElement("i", {
+          className: "glyphicon glyphicon-unchecked",
+          ref: "checkbox"
+        });
+      }
+    });
+    if (options.type === "playable") {
+      //display the check state
+      children.unshift(React.createElement(checkbox));
+    }
+    var card = React.createClass({
+      render: function() {
+        return React.createElement("div", {
+          className: "cards " + options.type,
+          key: options.id,
+          onClick: function() {
+            console.log("clicked element");
+            console.log(this.refs);
+            React.findDOMNode(this.refs.checkbox).setAttribute("class", "glyphicon glyphicon-ok");
+            //TODO add index to array of played cards
+          }
+        }, children);
+      }
+    });
+    return React.createElement(card);
   }
 </script>
 
