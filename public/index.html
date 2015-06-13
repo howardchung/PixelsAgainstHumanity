@@ -40,13 +40,12 @@
 <script src="//cdn.jsdelivr.net/react/latest/react.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
+  var io = io;
+  var React = React;
   var socket = io.connect();
   socket.on('connect', function() {
     console.log('connected');
   });
-  //TODO card, can be playable, display, black/white, selectwinner
-  //TODO handle select 2/3 case (order?)
-  //TODO click handler on playable cards to play
   var hand = React.createClass({
     getInitialState: function() {
       socket.on('hand', function(hand) {
@@ -81,7 +80,7 @@
         console.log(roster);
         this.setState({
           roster: roster
-        })
+        });
       }.bind(this));
       return {
         roster: []
@@ -126,6 +125,8 @@
           text: this.state.board.black.text,
           type: "black"
         }),
+        //TODO implement white card display
+        //whites is a hash of player index/id to array/hash of selected cards
         /*
         this.state.board.whites.map(function(w, i) {
           renderCard({
@@ -167,11 +168,16 @@
   }
 
   function play() {
+    //TODO add send button
     //TODO implement, player playing this array of cards
   }
 
   function select() {
     //TODO implement, for czar
+  }
+
+  function speak() {
+    //TODO implement text to speech, replace _ with white cards
   }
 
   function decodeHTML(s) {
@@ -186,31 +192,33 @@
     //options.text
     //options.type
     //options.id
-    var children = [decodeHTML(options.text)];
-    var checkbox = React.createClass({
-      render: function() {
-        return React.createElement("i", {
-          className: "glyphicon glyphicon-unchecked",
-          ref: "checkbox"
-        });
-      }
-    });
-    if (options.type === "playable") {
-      //display the check state
-      children.unshift(React.createElement(checkbox));
-    }
+    //TODO hide checkbox on nonplayable types
+    //TODO card, can be playable (checkbox), selectwinner
+    //TODO handle select 2/3 case (order?)
     var card = React.createClass({
+      getInitialState: function() {
+        return {
+          checked: false
+        };
+      },
+      handleClick: function() {
+        //TODO add index to array of played cards
+        console.log(this.state);
+        this.setState({
+          checked: this.state ? !this.state.checked : false
+        });
+      },
       render: function() {
         return React.createElement("div", {
           className: "cards " + options.type,
           key: options.id,
-          onClick: function() {
-            console.log("clicked element");
-            console.log(this.refs);
-            React.findDOMNode(this.refs.checkbox).setAttribute("class", "glyphicon glyphicon-ok");
-            //TODO add index to array of played cards
-          }
-        }, children);
+          onClick: function(e) {
+            e.preventDefault();
+            this.handleClick();
+          }.bind(this)
+        }, [React.createElement("i", {
+          className: this.state.checked ? "glyphicon glyphicon-ok" : "glyphicon glyphicon-unchecked",
+        }), decodeHTML(options.text)]);
       }
     });
     return React.createElement(card);
