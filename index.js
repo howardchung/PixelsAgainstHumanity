@@ -22,7 +22,7 @@ var white = deck.white.map(function(c) {
 var players = [];
 //published state
 var board = {
-  black: null,
+  black: {},
   whites: {},
   czar: -1,
   turn: 0,
@@ -71,6 +71,7 @@ io.on('connection', function(socket) {
     socket.name = String(name);
     updateRoster();
   });
+  //TODO default players join as spectators, clicking button adds them to active player list
 });
 
 function runTurn() {
@@ -105,8 +106,9 @@ function updateRoster() {
     if (err) {
       console.log(err);
     }
-    //notify everyone of current players list
+    //notify every player of roster/board state
     io.emit('roster', names);
+    io.emit('board', board);
   });
 }
 

@@ -25,7 +25,7 @@
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, .5);
     margin: 10px auto;
-    max-width: 600px;
+    max-width: 500px;
     padding: 1em;
     text-align: left;
   }
@@ -36,6 +36,9 @@
   .hidden {
     display: none;
   }
+  .glyphicon {
+    padding: 0.2em;
+  }
 </style>
 <script src="//cdn.jsdelivr.net/react/latest/react.js"></script>
 <script src="/socket.io/socket.io.js"></script>
@@ -45,6 +48,7 @@
   var socket = io.connect();
   socket.on('connect', function() {
     console.log('connected');
+    name();
   });
   var hand = React.createClass({
     getInitialState: function() {
@@ -63,7 +67,9 @@
       console.log("hand mounted");
     },
     render: function() {
-      return React.createElement("div", {}, this.state.hand.map(function(c, i) {
+      return React.createElement("div", {
+        className: "col-md-6"
+      }, this.state.hand.map(function(c, i) {
         return renderCard({
           text: c,
           id: i,
@@ -91,11 +97,16 @@
     },
     render: function() {
       //TODO mark the czar
+      //glyphicon glyphicon-king      
       //TODO mark played
-      //green circle
-      return React.createElement("div", null, this.state.roster.map(function(p) {
-        return (React.createElement("div", null, p.name + " " + p.score));
-      }));
+      //glyphicon glyphicon-ok-sign
+      return React.createElement("div", {
+        className: "col-md-12"
+      }, React.createElement("table", {
+        className: "table table-bordered"
+      }, this.state.roster.map(function(p) {
+        return React.createElement("tr", null, [React.createElement("td", null, p.name), React.createElement("td", null, p.score), React.createElement("td", null, p.status)]);
+      })));
     }
   });
   var board = React.createClass({
@@ -119,7 +130,9 @@
     },
     render: function() {
       console.log(JSON.stringify(this.state.board));
-      return React.createElement("div", {}, [
+      return React.createElement("div", {
+        className: "col-md-12"
+      }, [
         //TODO display current game state
         renderCard({
           text: this.state.board.black.text,
@@ -139,21 +152,35 @@
         ]);
     }
   });
+  var control = React.createClass({
+    render: function() {
+      return React.createElement("div", null, [React.createElement("button", {
+          className: "btn btn-success btn-lg",
+          onClick: start
+        }, "Start"),
+        React.createElement("form", {
+          className: "form-inline"
+        }, React.createElement("input", {
+          className: "form-inline",
+          type: "text",
+          onInput: name,
+          id: "name"
+        }))
+]);
+    }
+  })
   var react = React.createClass({
     render: function() {
       return React.createElement("div", null, [
         React.createElement("h1", null, "Hypertext Against People"),
-        React.createElement("button", {
-          onClick: start
-        }, "Start"),
-        React.createElement("input", {
-          type: "text",
-          onInput: name,
-          id: "name"
-        }),
-        React.createElement(roster),
-        React.createElement(board),
+        React.createElement("div", {
+          className: "row"
+        }, [
+        React.createElement("div", {
+            className: "col-md-6"
+          }, [React.createElement(control), React.createElement(roster), React.createElement(board)]),
         React.createElement(hand)
+        ])
         ]);
     }
   });
@@ -164,7 +191,8 @@
   }
 
   function name() {
-    socket.emit('name', document.getElementById('name').value);
+    document.getElementById('name').setAttribute("placeholder", socket.id);
+    socket.emit('name', document.getElementById('name').value || socket.id);
   }
 
   function play() {
@@ -203,7 +231,7 @@
       },
       handleClick: function() {
         //TODO add index to array of played cards
-        console.log(this.state);
+        //options.id
         this.setState({
           checked: this.state ? !this.state.checked : false
         });
@@ -217,7 +245,7 @@
             this.handleClick();
           }.bind(this)
         }, [React.createElement("i", {
-          className: this.state.checked ? "glyphicon glyphicon-ok" : "glyphicon glyphicon-unchecked",
+          className: this.state.checked ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked",
         }), decodeHTML(options.text)]);
       }
     });
