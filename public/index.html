@@ -69,13 +69,19 @@
     render: function() {
       return React.createElement("div", {
         className: "col-md-6"
-      }, this.state.hand.map(function(c, i) {
+      }, [
+        /*
+        React.createElement("button", {
+        className: "btn btn-primary btn-lg"
+      }, "Play Cards")
+      */
+      ].concat(this.state.hand.map(function(c, i) {
         return renderCard({
           text: c,
           id: i,
           type: "playable"
         });
-      }));
+      })));
     }
   });
   var roster = React.createClass({
@@ -96,16 +102,18 @@
       console.log("roster mounted");
     },
     render: function() {
-      //TODO mark the czar
-      //glyphicon glyphicon-king      
-      //TODO mark played
-      //glyphicon glyphicon-ok-sign
       return React.createElement("div", {
         className: "col-md-12"
       }, React.createElement("table", {
         className: "table table-bordered"
       }, this.state.roster.map(function(p) {
-        return React.createElement("tr", null, [React.createElement("td", null, p.name), React.createElement("td", null, p.score), React.createElement("td", null, p.status)]);
+        var icons = {
+          czar: "glyphicon glyphicon-king",
+          played: "glyphicon glyphicon-ok-sign"
+        };
+        return React.createElement("tr", null, [React.createElement("td", null, p.name), React.createElement("td", null, p.score), React.createElement("td", null, React.createElement("i", {
+          className: icons[p.status]
+        }))]);
       })));
     }
   });
@@ -129,26 +137,34 @@
       console.log("board mounted");
     },
     render: function() {
-      console.log(JSON.stringify(this.state.board));
       return React.createElement("div", {
         className: "col-md-12"
       }, [
         //TODO display current game state
+        React.createElement("pre", {
+          className: "text-left"
+        }, JSON.stringify(this.state.board, null, 2)),
         renderCard({
           text: this.state.board.black.text,
           type: "black"
         }),
-        //TODO implement white card display
-        //whites is a hash of player index/id to array/hash of selected cards
-        /*
-        this.state.board.whites.map(function(w, i) {
-          renderCard({
-            text: w.text,
-            id: i,
-            type: "select"
-          });
-        })
-        */
+        function renderSelect() {
+          var arr = [];
+          for (var key in this.state.board.whites) {
+            var w = this.state.board.whites[key];
+            //w is array of one or more cards
+            //TODO group cards better
+            var group = React.createElement("span", null, w.map(function(wc) {
+              return renderCard({
+                text: wc,
+                id: key,
+                type: "select"
+              });
+            }));
+            arr.push(group);
+          }
+          return React.createElement("div", null, arr);
+        }.bind(this)()
         ]);
     }
   });
@@ -168,7 +184,7 @@
         }))
 ]);
     }
-  })
+  });
   var react = React.createClass({
     render: function() {
       return React.createElement("div", null, [
@@ -195,17 +211,14 @@
     socket.emit('name', document.getElementById('name').value || socket.id);
   }
 
-  function play() {
-    //TODO add send button
-    //TODO implement, player playing this array of cards
-  }
-
   function select() {
     //TODO implement, for czar
   }
 
   function speak() {
     //TODO implement text to speech, replace _ with white cards
+    //if no _, append to end
+    //remove punctuation from white card
   }
 
   function decodeHTML(s) {
@@ -220,21 +233,20 @@
     //options.text
     //options.type
     //options.id
-    //TODO hide checkbox on nonplayable types
-    //TODO card, can be playable (checkbox), selectwinner
-    //TODO handle select 2/3 case (order?)
+    //click to play a card, continue playing until pick number fulfilled
     var card = React.createClass({
       getInitialState: function() {
-        return {
-          checked: false
-        };
+        return null;
       },
       handleClick: function() {
-        //TODO add index to array of played cards
-        //options.id
-        this.setState({
-          checked: this.state ? !this.state.checked : false
-        });
+        if (options.type === "playable") {
+          console.log(options.id);
+          socket.emit("play", options.id);
+          //TODO display played cards "on deck"
+        }
+        if (options.type === "select"){
+          //TODO send decision to server
+        }
       },
       render: function() {
         return React.createElement("div", {
@@ -244,9 +256,7 @@
             e.preventDefault();
             this.handleClick();
           }.bind(this)
-        }, [React.createElement("i", {
-          className: this.state.checked ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked",
-        }), decodeHTML(options.text)]);
+        }, decodeHTML(options.text));
       }
     });
     return React.createElement(card);

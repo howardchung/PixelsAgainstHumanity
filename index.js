@@ -46,18 +46,30 @@ io.on('connection', function(socket) {
   });
   socket.on('start', function() {
     //TODO disable start after game already started
-    replenish();
     runTurn();
   });
-  socket.on('play', function(msg) {
-    //index of card in hand played
+  socket.on('play', function(index) {
+    //TODO ensure the player has cards left to play
+    index = Number(index);
+    var whites = board.whites;
+    var playerIndex = players.indexOf(socket);
+    //TODO use scrambled indices
+    if (!whites[playerIndex]) {
+      whites[playerIndex] = [];
+    }
+    whites[playerIndex].push(socket.hand[index]);
+    //remove card from player's hand
+    socket.hand.splice(index, 1);
+    //check if player has played enough cards
     //notify all players that this player moved
-    //each turn, keep track of how many players still need to move
+    //check if all active players have moved
     //WHEN ALL PLAYERS MOVED
     //emit event to all players
     //reveal all played cards
-    //czar selects winner
+    //czar selects winning set
+    //server determines the player that this set id belongs to
     //TODO implement
+    updateRoster();
   });
   socket.on('select', function(msg) {
     //ensure the select comes from the current czar
@@ -71,24 +83,31 @@ io.on('connection', function(socket) {
     socket.name = String(name);
     updateRoster();
   });
-  //TODO default players join as spectators, clicking button adds them to active player list
+  //TODO players join as spectators, clicking button adds them to active player list so they need to be waited for, deals them a hand
 });
 
 function runTurn() {
+  //TODO scramble indices to hide player identities
   //restore cards to hands
   replenish();
   //server draws top black card
   board.black = black.pop();
   //czar becomes next player
   board.czar = (board.czar + 1) % players.length;
+  players.forEach(function(p, i) {
+    if (i === board.czar) {
+      p.status = "czar";
+    }
+    else {
+      p.status = "waiting";
+    }
+  });
   //increment turn number
   board.turn += 1;
   //count number of cards remaining in play
   board.black_remaining = black.length;
   board.white_remaining = white.length;
-  //notify players of board state
-  io.emit('board', board);
-  //notify players of player list/hand
+  //notify players of player list/hand/board
   updateRoster();
 }
 
@@ -100,7 +119,8 @@ function updateRoster() {
     p.emit('hand', p.hand);
     cb(null, {
       name: p.name,
-      score: p.score
+      score: p.score,
+      status: p.status
     });
   }, function(err, names) {
     if (err) {
