@@ -75,6 +75,8 @@ io.on('connection', function(socket) {
     //ensure the select comes from the current czar
     //czar selects a winning card
     //reveal winner, increment score
+    //remove all from board except winner
+    //czar clicks button to advance to next turn
     //start the next turn
     //TODO implement
   });

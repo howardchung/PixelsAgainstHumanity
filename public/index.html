@@ -106,15 +106,17 @@
         className: "col-md-12"
       }, React.createElement("table", {
         className: "table table-bordered"
-      }, this.state.roster.map(function(p) {
+      }, React.createElement("tbody", null, this.state.roster.map(function(p, i) {
         var icons = {
           czar: "glyphicon glyphicon-king",
           played: "glyphicon glyphicon-ok-sign"
         };
-        return React.createElement("tr", null, [React.createElement("td", null, p.name), React.createElement("td", null, p.score), React.createElement("td", null, React.createElement("i", {
+        return React.createElement("tr", {
+          key: i
+        }, [React.createElement("td", null, p.name), React.createElement("td", null, p.score), React.createElement("td", null, React.createElement("i", {
           className: icons[p.status]
         }))]);
-      })));
+      }))));
     }
   });
   var board = React.createClass({
@@ -154,10 +156,12 @@
             var w = this.state.board.whites[key];
             //w is array of one or more cards
             //TODO group cards better
-            var group = React.createElement("span", null, w.map(function(wc) {
+            var group = React.createElement("span", {
+              key: key
+            }, w.map(function(wc) {
               return renderCard({
                 text: wc,
-                id: key,
+                "data-index": key,
                 type: "select"
               });
             }));
@@ -211,14 +215,15 @@
     socket.emit('name', document.getElementById('name').value || socket.id);
   }
 
-  function select() {
-    //TODO implement, for czar
+  function speak() {
+    //TODO implement text to speech
   }
 
-  function speak() {
-    //TODO implement text to speech, replace _ with white cards
-    //if no _, append to end
+  function replace(black, white) {
+    //replace _ with white cards
     //remove punctuation from white card
+    //decapitalize
+    //if no _, append to end
   }
 
   function decodeHTML(s) {
@@ -244,7 +249,7 @@
           socket.emit("play", options.id);
           //TODO display played cards "on deck"
         }
-        if (options.type === "select"){
+        if (options.type === "select") {
           //TODO send decision to server
         }
       },
