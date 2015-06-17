@@ -46,6 +46,8 @@ io.on('connection', function(socket) {
   });
   socket.on('start', function() {
     //TODO disable start after game already started
+    //TODO czar clicks button to advance to next turn
+    //start the next turn
     runTurn();
   });
   socket.on('play', function(index) {
@@ -60,25 +62,24 @@ io.on('connection', function(socket) {
     whites[playerIndex].push(socket.hand[index]);
     //remove card from player's hand
     socket.hand.splice(index, 1);
-    //check if player has played enough cards
+    //if player has no cards left to play
     //notify all players that this player moved
-    //check if all active players have moved
-    //WHEN ALL PLAYERS MOVED
+    //if all active players have moved
     //emit event to all players
     //reveal all played cards
-    //czar selects winning set
-    //server determines the player that this set id belongs to
     //TODO implement
     updateRoster();
   });
-  socket.on('select', function(msg) {
-    //ensure the select comes from the current czar
-    //czar selects a winning card
+  socket.on('select', function(index) {
+    index = Number(index);
+    //TODO ensure the select comes from the current czar
+    //check index of this socket matches czar index
+    players[index].score += 1;
     //reveal winner, increment score
+    //TODO highlight winner
     //remove all from board except winner
-    //czar clicks button to advance to next turn
-    //start the next turn
-    //TODO implement
+    board.whites = [board.whites[index]];
+    updateRoster();
   });
   socket.on('name', function(name) {
     //player changing name
@@ -92,6 +93,8 @@ function runTurn() {
   //TODO scramble indices to hide player identities
   //restore cards to hands
   replenish();
+  //clear board
+  board.whites = {};
   //server draws top black card
   board.black = black.pop();
   //czar becomes next player

@@ -148,25 +148,21 @@
         }, JSON.stringify(this.state.board, null, 2)),
         renderCard({
           text: this.state.board.black.text,
-          type: "black"
+          style: "black"
         }),
         function renderSelect() {
-          var arr = [];
-          for (var key in this.state.board.whites) {
+          var arr = Object.keys(this.state.board.whites).map(function(key) {
             var w = this.state.board.whites[key];
-            //w is array of one or more cards
-            //TODO group cards better
-            var group = React.createElement("span", {
+            return React.createElement("div", {
               key: key
-            }, w.map(function(wc) {
-              return renderCard({
-                text: wc,
-                "data-index": key,
-                type: "select"
-              });
+            }, renderCard({
+              text: replace(this.state.board.black, w),
+              "data-index": key,
+              type: "select",
+              style: "black",
+              id: key
             }));
-            arr.push(group);
-          }
+          }.bind(this));
           return React.createElement("div", null, arr);
         }.bind(this)()
         ]);
@@ -219,19 +215,24 @@
     //TODO implement text to speech
   }
 
-  function replace(black, white) {
-    //replace _ with white cards
-    //remove punctuation from white card
-    //decapitalize
+  function replace(black, whites) {
+    //black: single black card
+    //whites: array of white cards
     //if no _, append to end
-  }
-
-  function decodeHTML(s) {
-    var str, temp = document.createElement('p');
-    temp.innerHTML = s;
-    str = temp.textContent || temp.innerText;
-    temp = null;
-    return str;
+    if (black.text.indexOf("_") === -1) {
+      return black.text + " " + whites[0];
+    }
+    else {
+      var replace = black.text;
+      whites.forEach(function(w) {
+        //replace _ with white cards
+        //remove punctuation from white card
+        //decapitalize first letter
+        replace = replace.replace("_", w.slice(0, 1).toLowerCase() + w.slice(1, -1));
+      });
+      //capitalize resulting string
+      return replace.slice(0,1).toUpperCase() + replace.slice(1);
+    }
   }
 
   function renderCard(options) {
@@ -250,18 +251,23 @@
           //TODO display played cards "on deck"
         }
         if (options.type === "select") {
+          console.log(options.id);
           //TODO send decision to server
+          socket.emit("select", options.id);
         }
       },
       render: function() {
         return React.createElement("div", {
-          className: "cards " + options.type,
+          className: "cards " + options.style,
           key: options.id,
           onClick: function(e) {
             e.preventDefault();
             this.handleClick();
-          }.bind(this)
-        }, decodeHTML(options.text));
+          }.bind(this),
+          dangerouslySetInnerHTML: {
+            "__html": options.text
+          }
+        });
       }
     });
     return React.createElement(card);
