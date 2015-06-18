@@ -79,7 +79,7 @@
         return renderCard({
           text: c,
           id: i,
-          type: "playable"
+          playable: true
         });
       })));
     }
@@ -139,6 +139,26 @@
       console.log("board mounted");
     },
     render: function() {
+      var arr = Object.keys(this.state.board.whites).map(function(key) {
+        var w = this.state.board.whites[key];
+        var result = replace(this.state.board.black, w);
+        return React.createElement("div", {
+          key: key
+        }, [renderCard({
+            text: result,
+            "data-index": key,
+            selectable: true,
+            readable: true,
+            style: "black",
+            id: key
+          }), React.createElement("i", {
+            className: "glyphicon glyphicon-volume-up",
+            onClick: function() {
+              speak(result);
+            }
+          })
+        ]);
+      }.bind(this));
       return React.createElement("div", {
         className: "col-md-12"
       }, [
@@ -149,23 +169,7 @@
         renderCard({
           text: this.state.board.black.text,
           style: "black"
-        }),
-        function renderSelect() {
-          var arr = Object.keys(this.state.board.whites).map(function(key) {
-            var w = this.state.board.whites[key];
-            return React.createElement("div", {
-              key: key
-            }, renderCard({
-              text: replace(this.state.board.black, w),
-              "data-index": key,
-              type: "select",
-              style: "black",
-              id: key
-            }));
-          }.bind(this));
-          return React.createElement("div", null, arr);
-        }.bind(this)()
-        ]);
+        })].concat(arr));
     }
   });
   var control = React.createClass({
@@ -211,8 +215,9 @@
     socket.emit('name', document.getElementById('name').value || socket.id);
   }
 
-  function speak() {
-    //TODO implement text to speech
+  function speak(text) {
+    var msg = new SpeechSynthesisUtterance(text);
+    window.speechSynthesis.speak(msg);
   }
 
   function replace(black, whites) {
@@ -227,11 +232,10 @@
       whites.forEach(function(w) {
         //replace _ with white cards
         //remove punctuation from white card
-        //decapitalize first letter
-        replace = replace.replace("_", w.slice(0, 1).toLowerCase() + w.slice(1, -1));
+        replace = replace.replace("_",w.slice(0, -1));
       });
       //capitalize resulting string
-      return replace.slice(0,1).toUpperCase() + replace.slice(1);
+      return replace.slice(0, 1).toUpperCase() + replace.slice(1);
     }
   }
 
@@ -245,14 +249,13 @@
         return null;
       },
       handleClick: function() {
-        if (options.type === "playable") {
+        if (options.playable) {
           console.log(options.id);
           socket.emit("play", options.id);
           //TODO display played cards "on deck"
         }
-        if (options.type === "select") {
+        if (options.selectable) {
           console.log(options.id);
-          //TODO send decision to server
           socket.emit("select", options.id);
         }
       },
