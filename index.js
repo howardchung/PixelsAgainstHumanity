@@ -91,6 +91,7 @@ io.on('connection', function(socket) {
 
 function runTurn() {
   //TODO scramble indices to hide player identities
+  //TODO check for out of cards (end game)
   //restore cards to hands
   replenish();
   //clear board
