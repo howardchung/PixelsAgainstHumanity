@@ -123,10 +123,11 @@
       }, React.createElement("tbody", null, this.state.roster.map(function(p, i) {
         var icons = {
           czar: "glyphicon glyphicon-king",
-          played: "glyphicon glyphicon-ok-sign"
+          ready: "glyphicon glyphicon-ok-sign"
         };
         return React.createElement("tr", {
-          key: i
+          key: i,
+          className : p.winner ? "success" : ""
         }, [React.createElement("td", null, p.name), React.createElement("td", null, p.score), React.createElement("td", null, React.createElement("i", {
           className: icons[p.status]
         }))]);

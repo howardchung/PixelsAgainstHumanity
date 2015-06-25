@@ -29,6 +29,7 @@ var board = {
   black_remaining: null,
   white_remaining: null
 };
+var tempWhites = {};
 shuffle(black);
 shuffle(white);
 io.on('connection', function(socket) {
@@ -46,14 +47,14 @@ io.on('connection', function(socket) {
   });
   socket.on('start', function() {
     //TODO disable start after game already started
-    //TODO czar clicks button to advance to next turn
-    //start the next turn
+    //TODO czar clicks to advance to next turn
     runTurn();
   });
   socket.on('play', function(index) {
+    //TODO ensure the player is not czar
     //TODO ensure the player has cards left to play
     index = Number(index);
-    var whites = board.whites;
+    var whites = tempWhites;
     var playerIndex = players.indexOf(socket);
     //TODO use scrambled indices
     if (!whites[playerIndex]) {
@@ -63,23 +64,30 @@ io.on('connection', function(socket) {
     //remove card from player's hand
     socket.hand.splice(index, 1);
     //if player has no cards left to play
-    //notify all players that this player moved
-    //if all active players have moved
-    //emit event to all players
-    //reveal all played cards
-    //TODO implement
+    if (whites[playerIndex].length >= board.black.pick) {
+      //notify all players that this player moved
+      socket.status = "ready";
+      //if all active players have moved
+      if (checkReady()) {
+        //reveal all played cards
+        board.whites = tempWhites;
+      }
+    }
     updateRoster();
   });
   socket.on('select', function(index) {
     index = Number(index);
-    //TODO ensure the select comes from the current czar
+    var playerIndex = players.indexOf(socket);
     //check index of this socket matches czar index
-    players[index].score += 1;
-    //reveal winner, increment score
-    //TODO highlight winner
-    //remove all from board except winner
-    board.whites = [board.whites[index]];
-    updateRoster();
+    //TODO check that there hasn't been a winner selected this turn
+    if (playerIndex === board.czar) {
+      players[index].score += 1;
+      players[index].winner = true;
+      //reveal winner, increment score
+      //remove all from board except winner
+      board.whites = [board.whites[index]];
+      updateRoster();
+    }
   });
   socket.on('name', function(name) {
     //player changing name
@@ -107,6 +115,7 @@ function runTurn() {
     else {
       p.status = "waiting";
     }
+    p.winner = false;
   });
   //increment turn number
   board.turn += 1;
@@ -126,7 +135,8 @@ function updateRoster() {
     cb(null, {
       name: p.name,
       score: p.score,
-      status: p.status
+      status: p.status,
+      winner: p.winner
     });
   }, function(err, names) {
     if (err) {
@@ -136,6 +146,15 @@ function updateRoster() {
     io.emit('roster', names);
     io.emit('board', board);
   });
+}
+
+function checkReady() {
+  for (var i = 0; i < players.length; i++) {
+    if (players[i].status !== "ready" && players[i].status !== "czar") {
+      return false;
+    }
+  }
+  return true;
 }
 
 function replenish() {
@@ -153,3 +172,4 @@ function shuffle(o) {
   for (var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
   return o;
 }
+//TODO handle czar leaving game
