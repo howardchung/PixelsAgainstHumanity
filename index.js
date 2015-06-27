@@ -11,6 +11,7 @@ var server = app.listen(process.env.PORT || 5000, function() {
 var io = require('socket.io')(server);
 app.use(express.static(path.resolve(__dirname, 'public')));
 //private server state
+//TODO support deck selection
 var deck = cards["Base"];
 var black = deck.black.map(function(c) {
   return cards.blackCards[c];
@@ -51,29 +52,31 @@ io.on('connection', function(socket) {
     runTurn();
   });
   socket.on('play', function(index) {
-    //TODO ensure the player is not czar
-    //TODO ensure the player has cards left to play
-    index = Number(index);
     var whites = tempWhites;
-    var playerIndex = players.indexOf(socket);
-    //TODO use scrambled indices
-    if (!whites[playerIndex]) {
-      whites[playerIndex] = [];
-    }
-    whites[playerIndex].push(socket.hand[index]);
-    //remove card from player's hand
-    socket.hand.splice(index, 1);
-    //if player has no cards left to play
-    if (whites[playerIndex].length >= board.black.pick) {
-      //notify all players that this player moved
-      socket.status = "ready";
-      //if all active players have moved
-      if (checkReady()) {
-        //reveal all played cards
-        board.whites = tempWhites;
+    //TODO ensure the player is not czar
+    //ensure the player has cards left to play
+    if (!whites[playerIndex] || whites[playerIndex].length < board.black.pick) {
+      index = Number(index);
+      var playerIndex = players.indexOf(socket);
+      //TODO use scrambled indices
+      if (!whites[playerIndex]) {
+        whites[playerIndex] = [];
       }
+      whites[playerIndex].push(socket.hand[index]);
+      //remove card from player's hand
+      socket.hand.splice(index, 1);
+      //if player has no cards left to play
+      if (whites[playerIndex].length >= board.black.pick) {
+        //notify all players that this player moved
+        socket.status = "ready";
+        //if all active players have moved
+        if (checkReady()) {
+          //reveal all played cards
+          board.whites = tempWhites;
+        }
+      }
+      updateRoster();
     }
-    updateRoster();
   });
   socket.on('select', function(index) {
     index = Number(index);
@@ -94,7 +97,8 @@ io.on('connection', function(socket) {
     socket.name = String(name);
     updateRoster();
   });
-  //TODO players join as spectators, clicking button adds them to active player list so they need to be waited for, deals them a hand
+  //TODO allow players to join as spectators
+  //TODO handle czar leaving game
 });
 
 function runTurn() {
@@ -102,6 +106,8 @@ function runTurn() {
   //TODO check for out of cards (end game)
   //restore cards to hands
   replenish();
+  //clear temp
+  tempWhites = {};
   //clear board
   board.whites = {};
   //server draws top black card
@@ -172,4 +178,3 @@ function shuffle(o) {
   for (var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
   return o;
 }
-//TODO handle czar leaving game
