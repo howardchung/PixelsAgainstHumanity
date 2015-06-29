@@ -11,6 +11,7 @@ var server = app.listen(process.env.PORT || 5000, function() {
 var io = require('socket.io')(server);
 app.use(express.static(path.resolve(__dirname, 'public')));
 //private server state
+//TODO implement multiple rooms
 //TODO support deck selection
 var deck = cards["Base"];
 var black = deck.black.map(function(c) {
@@ -19,7 +20,6 @@ var black = deck.black.map(function(c) {
 var white = deck.white.map(function(c) {
   return cards.whiteCards[c];
 });
-//TODO implement multiple rooms
 var players = [];
 //published state
 var board = {
@@ -28,7 +28,8 @@ var board = {
   czar: -1,
   turn: 0,
   black_remaining: null,
-  white_remaining: null
+  white_remaining: null,
+  selected: false
 };
 var tempWhites = {};
 shuffle(black);
@@ -47,17 +48,16 @@ io.on('connection', function(socket) {
     updateRoster();
   });
   socket.on('start', function() {
-    //TODO disable start after game already started
-    //TODO czar clicks to advance to next turn
+    //TODO new game function
+    //TODO only allow czar to advance turn?
     runTurn();
   });
   socket.on('play', function(index) {
     var whites = tempWhites;
-    //TODO ensure the player is not czar
-    //ensure the player has cards left to play
-    if (!whites[playerIndex] || whites[playerIndex].length < board.black.pick) {
+    var playerIndex = players.indexOf(socket);
+    //ensure the player has cards left to play and is not czar
+    if ((!whites[playerIndex] || whites[playerIndex].length < board.black.pick) && socket.status !== "czar") {
       index = Number(index);
-      var playerIndex = players.indexOf(socket);
       //TODO use scrambled indices
       if (!whites[playerIndex]) {
         whites[playerIndex] = [];
@@ -80,15 +80,16 @@ io.on('connection', function(socket) {
   });
   socket.on('select', function(index) {
     index = Number(index);
-    var playerIndex = players.indexOf(socket);
-    //check index of this socket matches czar index
-    //TODO check that there hasn't been a winner selected this turn
-    if (playerIndex === board.czar) {
+    //TODO use scrambled indices
+    //check that there hasn't been a winner selected this turn
+    //make sure this player is czar
+    if (socket.status === "czar" && !board.selected) {
       players[index].score += 1;
       players[index].winner = true;
       //reveal winner, increment score
       //remove all from board except winner
       board.whites = [board.whites[index]];
+      board.selected = true;
       updateRoster();
     }
   });
@@ -99,15 +100,17 @@ io.on('connection', function(socket) {
   });
   //TODO allow players to join as spectators
   //TODO handle czar leaving game
+  //TODO handle player leaving game
 });
 
 function runTurn() {
   //TODO scramble indices to hide player identities
-  //TODO check for out of cards (end game)
   //restore cards to hands
   replenish();
+  //TODO check for out of cards (end game)
   //clear temp
   tempWhites = {};
+  board.selected = false;
   //clear board
   board.whites = {};
   //server draws top black card
