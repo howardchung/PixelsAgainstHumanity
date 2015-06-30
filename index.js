@@ -10,30 +10,13 @@ var server = app.listen(process.env.PORT || 5000, function() {
 });
 var io = require('socket.io')(server);
 app.use(express.static(path.resolve(__dirname, 'public')));
-//private server state
 //TODO implement multiple rooms
-//TODO support deck selection
-var deck = cards["Base"];
-var black = deck.black.map(function(c) {
-  return cards.blackCards[c];
-});
-var white = deck.white.map(function(c) {
-  return cards.whiteCards[c];
-});
+var black;
+var white;
 var players = [];
-//published state
-var board = {
-  black: {},
-  whites: {},
-  czar: -1,
-  turn: 0,
-  black_remaining: null,
-  white_remaining: null,
-  selected: false
-};
-var tempWhites = {};
-shuffle(black);
-shuffle(white);
+var tempWhites;
+var board;
+newGame();
 io.on('connection', function(socket) {
   //new player joined
   console.log("%s joined", socket.id);
@@ -45,12 +28,21 @@ io.on('connection', function(socket) {
   socket.on('disconnect', function() {
     players.splice(players.indexOf(socket), 1);
     console.log("%s left", socket.id);
+    //TODO handle czar leaving game
+    //TODO handle player leaving game
     updateRoster();
   });
+  //TODO allow players to join as spectators
   socket.on('start', function() {
-    //TODO new game function
-    //TODO only allow czar to advance turn?
-    runTurn();
+    //only allow czar to advance turn, unless starting new game?
+    if (socket.status === "czar" || board.czar === -1) {
+      runTurn();
+      updateRoster();
+    }
+  });
+  socket.on('newgame', function() {
+    newGame();
+    updateRoster();
   });
   socket.on('play', function(index) {
     var whites = tempWhites;
@@ -98,10 +90,31 @@ io.on('connection', function(socket) {
     socket.name = String(name);
     updateRoster();
   });
-  //TODO allow players to join as spectators
-  //TODO handle czar leaving game
-  //TODO handle player leaving game
 });
+
+function newGame() {
+  //TODO support deck selection
+  var deck = cards["Base"];
+  black = deck.black.map(function(c) {
+    return cards.blackCards[c];
+  });
+  white = deck.white.map(function(c) {
+    return cards.whiteCards[c];
+  });
+  shuffle(black);
+  shuffle(white);
+  //players = [];
+  board = {
+    black: {},
+    whites: {},
+    czar: -1,
+    turn: 0,
+    black_remaining: null,
+    white_remaining: null,
+    selected: false
+  };
+  tempWhites = {};
+}
 
 function runTurn() {
   //TODO scramble indices to hide player identities
@@ -131,8 +144,6 @@ function runTurn() {
   //count number of cards remaining in play
   board.black_remaining = black.length;
   board.white_remaining = white.length;
-  //notify players of player list/hand/board
-  updateRoster();
 }
 
 function updateRoster() {

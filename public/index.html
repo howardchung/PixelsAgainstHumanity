@@ -14,9 +14,7 @@
       <!-- Collect the nav links, forms, and other content for toggling -->
       <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
         <ul class="nav navbar-nav">
-          <li>
-            <p class="navbar-btn"> <a href="#" id="start" class="btn btn-success">Start</a> </p>
-          </li>
+          <li> </li>
         </ul>
         <form class="navbar-form navbar-right" role="search">
           <div class="form-group">
@@ -42,6 +40,7 @@
     text-align: center;
     text-rendering: optimizeLegibility;
   }
+  
   .cards {
     background: #FFF;
     border-radius: 8px;
@@ -51,13 +50,16 @@
     padding: 1em;
     text-align: left;
   }
+  
   .black {
     background: #000;
     color: #FFF;
   }
+  
   .hidden {
     display: none;
   }
+  
   .glyphicon {
     padding: 0.2em;
   }
@@ -127,7 +129,7 @@
         };
         return React.createElement("tr", {
           key: i,
-          className : p.winner ? "success" : ""
+          className: p.winner ? "success" : ""
         }, [React.createElement("td", null, p.name), React.createElement("td", null, p.score), React.createElement("td", null, React.createElement("i", {
           className: icons[p.status]
         }))]);
@@ -196,7 +198,15 @@
         React.createElement("div", {
             className: "col-md-6",
             key: "left"
-          }, [React.createElement(roster), React.createElement(board)]),
+          }, [React.createElement("a", {
+              className: "btn btn-success",
+              onClick: start
+            }, "Start/Next Turn"),
+            React.createElement("a", {
+              className: "btn btn-primary",
+              onClick: newGame,
+            }, "New Game"),
+            React.createElement(roster), React.createElement(board)]),
           React.createElement("div", {
             className: "col-md-6",
             key: "right"
@@ -207,10 +217,13 @@
   });
   React.render(React.createElement(react, null), document.getElementById("react"));
   document.getElementById('name').setAttribute("oninput", "setName();");
-  document.getElementById('start').setAttribute("onClick", "start();");
 
   function start() {
     socket.emit('start');
+  }
+
+  function newGame() {
+    socket.emit('newgame');
   }
 
   function setName() {
