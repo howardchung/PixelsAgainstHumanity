@@ -9,16 +9,12 @@
   <nav class="navbar navbar-default">
     <div class="container-fluid">
       <!-- Brand and toggle get grouped for better mobile display -->
-      <div class="navbar-header">
-        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false"> <span class="sr-only">Toggle navigation</span> <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span> </button> <a class="navbar-brand" href=".">Hypertext Against People</a> </div>
-      <!-- Collect the nav links, forms, and other content for toggling -->
-      <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-        <ul class="nav navbar-nav">
-          <li> </li>
-        </ul>
-        <form class="navbar-form navbar-right" role="search">
+      <div class="navbar-header"> <a class="navbar-brand" href=".">Hypertext Against People</a> </div>
+      <div>
+        <form class="navbar-form navbar-right">
           <div class="form-group">
-            <label for="name">Change my name:</label>
+            <div class="btn btn-success" onclick="start()">Start/Next Turn</div>
+            <label for="name">Name:</label>
             <input type="text" class="form-control" id="name" placeholder=""> </div>
         </form>
       </div>
@@ -29,16 +25,13 @@
   <div class="container text-center" id="react"> </div>
 </body>
 <link href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.min.css" rel="stylesheet">
-<link href='http://fonts.googleapis.com/css?family=Roboto:500,500italic,900|Montserrat:700' rel='stylesheet' type='text/css'>
 <style>
   body {
     background: #777;
     color: #000;
-    font-family: "Helvetica Neue", "Roboto", Helvetica, Arial, "Lucida Grande", sans-serif;
     font-size: 16pt;
     font-weight: 500;
     text-align: center;
-    text-rendering: optimizeLegibility;
   }
   
   .cards {
@@ -46,7 +39,6 @@
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, .5);
     margin: 10px auto;
-    max-width: 600px;
     padding: 1em;
     text-align: left;
   }
@@ -119,13 +111,12 @@
     },
     render: function() {
       return React.createElement("div", {
-        className: "col-md-12"
       }, React.createElement("table", {
-        className: "table table-bordered"
+        className: "table"
       }, React.createElement("tbody", null, this.state.roster.map(function(p, i) {
         var icons = {
           czar: "glyphicon glyphicon-king",
-          ready: "glyphicon glyphicon-ok-sign"
+          ready: "glyphicon glyphicon-ok"
         };
         return React.createElement("tr", {
           key: i,
@@ -156,7 +147,7 @@
       console.log("board mounted");
     },
     render: function() {
-      var arr = Object.keys(this.state.board.whites).map(function(key) {
+      var playedCards = Object.keys(this.state.board.whites).map(function(key) {
         var w = this.state.board.whites[key];
         var result = replace(this.state.board.black, w);
         return React.createElement("div", {
@@ -168,7 +159,9 @@
             readable: true,
             style: "black",
             id: key
-          }), React.createElement("i", {
+          }), 
+          //TODO inline the speak icon with the card
+          React.createElement("i", {
             className: "glyphicon glyphicon-volume-up",
             onClick: function() {
               speak(result);
@@ -177,16 +170,17 @@
         ]);
       }.bind(this));
       return React.createElement("div", {
-        className: "col-md-12"
       }, [
         //TODO display current game state
+        /*
         React.createElement("pre", {
           className: "text-left"
         }, JSON.stringify(this.state.board, null, 2)),
+        */
         renderCard({
           text: this.state.board.black.text,
           style: "black"
-        })].concat(arr));
+        })].concat(playedCards));
     }
   });
   var react = React.createClass({
@@ -196,21 +190,11 @@
           className: "row"
         }, [
         React.createElement("div", {
-            className: "col-md-6",
-            key: "left"
-          }, [React.createElement("a", {
-              className: "btn btn-success",
-              onClick: start
-            }, "Start/Next Turn"),
-            React.createElement("a", {
-              className: "btn btn-primary",
-              onClick: newGame,
-            }, "New Game"),
-            React.createElement(roster), React.createElement(board)]),
-          React.createElement("div", {
-            className: "col-md-6",
-            key: "right"
-          }, React.createElement(hand))
+          }, [
+          React.createElement(roster),
+          React.createElement(board),
+          React.createElement(hand)
+          ])
         ])
         ]);
     }
@@ -222,17 +206,13 @@
     socket.emit('start');
   }
 
-  function newGame() {
-    socket.emit('newgame');
-  }
-
   function setName() {
     document.getElementById('name').setAttribute("placeholder", socket.id);
     socket.emit('name', document.getElementById('name').value || socket.id);
   }
 
   function speak(text) {
-    var msg = new SpeechSynthesisUtterance(text);
+    var msg = new window.SpeechSynthesisUtterance(text);
     window.speechSynthesis.speak(msg);
   }
 

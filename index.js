@@ -10,6 +10,12 @@ var server = app.listen(process.env.PORT || 5000, function() {
 });
 var io = require('socket.io')(server);
 app.use(express.static(path.resolve(__dirname, 'public')));
+//user joins, gets list of rooms
+//user can change name at any time
+//user joins a room by default as spectator
+//user clicks button to join game
+//inside room, any player can start game
+//new game automatically called on room creation
 //TODO implement multiple rooms
 var black;
 var white;
@@ -20,6 +26,7 @@ newGame();
 io.on('connection', function(socket) {
   //new player joined
   console.log("%s joined", socket.id);
+  //TODO players join as spectators by default, enter player list onclick
   socket.score = 0;
   socket.hand = [];
   players.push(socket);
@@ -32,17 +39,13 @@ io.on('connection', function(socket) {
     //TODO handle player leaving game
     updateRoster();
   });
-  //TODO allow players to join as spectators
   socket.on('start', function() {
     //only allow czar to advance turn, unless starting new game?
-    if (socket.status === "czar" || board.czar === -1) {
+    //or only allow creator to start new game
+    if (socket.status === "czar" || board.czar === -1 || true) {
       runTurn();
       updateRoster();
     }
-  });
-  socket.on('newgame', function() {
-    newGame();
-    updateRoster();
   });
   socket.on('play', function(index) {
     var whites = tempWhites;
