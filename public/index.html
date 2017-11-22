@@ -57,15 +57,23 @@
   }
 </style>
 <script src="//cdn.jsdelivr.net/react/latest/react.js"></script>
-<script src="/socket.io/socket.io.js"></script>
 <script>
   var io = io;
   var React = React;
-  var socket = io.connect();
+  var loc = window.location, new_uri;
+  if (loc.protocol === "https:") {
+      new_uri = "wss:";
+  } else {
+      new_uri = "ws:";
+  }
+  new_uri += "//" + loc.host;
+  new_uri += loc.pathname;
+  var socket = new WebSocket(new_uri);
   socket.on('connect', function() {
     console.log('connected');
     setName();
   });
+  /*
   var hand = React.createClass({
     getInitialState: function() {
       socket.on('hand', function(hand) {
@@ -172,11 +180,9 @@
       return React.createElement("div", {
       }, [
         //TODO display current game state
-        /*
         React.createElement("pre", {
           className: "text-left"
         }, JSON.stringify(this.state.board, null, 2)),
-        */
         renderCard({
           text: this.state.board.black.text,
           style: "black"
@@ -201,14 +207,14 @@
   });
   React.render(React.createElement(react, null), document.getElementById("react"));
   document.getElementById('name').setAttribute("oninput", "setName();");
-
+  */
   function start() {
-    socket.emit('start');
+    socket.write(JSON.stringify({type: 'start'}));
   }
 
   function setName() {
     document.getElementById('name').setAttribute("placeholder", socket.id);
-    socket.emit('name', document.getElementById('name').value || socket.id);
+    socket.write(JSON.stringify({ type: 'name', name: document.getElementById('name').value || socket.id }));
   }
 
   function speak(text) {
