@@ -1,282 +1,40 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="theme-color" content="#000000">
+    <!--
+      manifest.json provides metadata used when your web app is added to the
+      homescreen on Android. See https://developers.google.com/web/fundamentals/engage-and-retain/web-app-manifest/
+    -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json">
+    <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
+    <!--
+      Notice the use of %PUBLIC_URL% in the tags above.
+      It will be replaced with the URL of the `public` folder during the build.
+      Only files inside the `public` folder can be referenced from the HTML.
 
-<head>
-  <title>Hypertext Against People</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" /> </head>
+      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
+      work correctly both with client-side routing and a non-root public URL.
+      Learn how to configure a non-root public URL by running `npm run build`.
+    -->
+    <title>React App</title>
+  </head>
+  <body>
+    <noscript>
+      You need to enable JavaScript to run this app.
+    </noscript>
+    <div id="root"></div>
+    <!--
+      This HTML file is a template.
+      If you open it directly in the browser, you will see an empty page.
 
-<body>
-  <nav class="navbar navbar-default">
-    <div class="container-fluid">
-      <!-- Brand and toggle get grouped for better mobile display -->
-      <div class="navbar-header"> <a class="navbar-brand" href=".">Hypertext Against People</a> </div>
-      <div>
-        <form class="navbar-form navbar-right">
-          <div class="form-group">
-            <div class="btn btn-success" onclick="start()">Start/Next Turn</div>
-            <label for="name">Name:</label>
-            <input type="text" class="form-control" id="name" placeholder=""> </div>
-        </form>
-      </div>
-      <!-- /.navbar-collapse -->
-    </div>
-    <!-- /.container-fluid -->
-  </nav>
-  <div class="container text-center" id="react"> </div>
-</body>
-<link href="//cdn.jsdelivr.net/bootstrap/latest/css/bootstrap.min.css" rel="stylesheet">
-<style>
-  body {
-    background: #777;
-    color: #000;
-    font-size: 16pt;
-    font-weight: 500;
-    text-align: center;
-  }
-  
-  .cards {
-    background: #FFF;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, .5);
-    margin: 10px auto;
-    padding: 1em;
-    text-align: left;
-  }
-  
-  .black {
-    background: #000;
-    color: #FFF;
-  }
-  
-  .hidden {
-    display: none;
-  }
-  
-  .glyphicon {
-    padding: 0.2em;
-  }
-</style>
-<script src="//cdn.jsdelivr.net/react/latest/react.js"></script>
-<script>
-  var io = io;
-  var React = React;
-  var loc = window.location, new_uri;
-  if (loc.protocol === "https:") {
-      new_uri = "wss:";
-  } else {
-      new_uri = "ws:";
-  }
-  new_uri += "//" + loc.host;
-  new_uri += loc.pathname;
-  var socket = new WebSocket(new_uri);
-  socket.on('connect', function() {
-    console.log('connected');
-    setName();
-  });
-  /*
-  var hand = React.createClass({
-    getInitialState: function() {
-      socket.on('hand', function(hand) {
-        console.log("hand");
-        console.log(hand);
-        this.setState({
-          hand: hand
-        });
-      }.bind(this));
-      return {
-        hand: []
-      };
-    },
-    componentDidMount: function() {
-      console.log("hand mounted");
-    },
-    render: function() {
-      return React.createElement("div", {}, this.state.hand.map(function(c, i) {
-        return renderCard({
-          text: c,
-          id: i,
-          playable: true
-        });
-      }));
-    }
-  });
-  var roster = React.createClass({
-    getInitialState: function() {
-      socket.on('roster', function(roster) {
-        //server pushed new roster
-        console.log('roster');
-        console.log(roster);
-        this.setState({
-          roster: roster
-        });
-      }.bind(this));
-      return {
-        roster: []
-      };
-    },
-    componentDidMount: function() {
-      console.log("roster mounted");
-    },
-    render: function() {
-      return React.createElement("div", {
-      }, React.createElement("table", {
-        className: "table"
-      }, React.createElement("tbody", null, this.state.roster.map(function(p, i) {
-        var icons = {
-          czar: "glyphicon glyphicon-king",
-          ready: "glyphicon glyphicon-ok"
-        };
-        return React.createElement("tr", {
-          key: i,
-          className: p.winner ? "success" : ""
-        }, [React.createElement("td", null, p.name), React.createElement("td", null, p.score), React.createElement("td", null, React.createElement("i", {
-          className: icons[p.status]
-        }))]);
-      }))));
-    }
-  });
-  var board = React.createClass({
-    getInitialState: function() {
-      socket.on('board', function(board) {
-        console.log("board");
-        console.log(board);
-        this.setState({
-          board: board
-        });
-      }.bind(this));
-      return {
-        board: {
-          black: {},
-          whites: {}
-        }
-      };
-    },
-    componentDidMount: function() {
-      console.log("board mounted");
-    },
-    render: function() {
-      var playedCards = Object.keys(this.state.board.whites).map(function(key) {
-        var w = this.state.board.whites[key];
-        var result = replace(this.state.board.black, w);
-        return React.createElement("div", {
-          key: key
-        }, [renderCard({
-            text: result,
-            "data-index": key,
-            selectable: true,
-            readable: true,
-            style: "black",
-            id: key
-          }), 
-          //TODO inline the speak icon with the card
-          React.createElement("i", {
-            className: "glyphicon glyphicon-volume-up",
-            onClick: function() {
-              speak(result);
-            }
-          })
-        ]);
-      }.bind(this));
-      return React.createElement("div", {
-      }, [
-        //TODO display current game state
-        React.createElement("pre", {
-          className: "text-left"
-        }, JSON.stringify(this.state.board, null, 2)),
-        renderCard({
-          text: this.state.board.black.text,
-          style: "black"
-        })].concat(playedCards));
-    }
-  });
-  var react = React.createClass({
-    render: function() {
-      return React.createElement("div", null, [
-        React.createElement("div", {
-          className: "row"
-        }, [
-        React.createElement("div", {
-          }, [
-          React.createElement(roster),
-          React.createElement(board),
-          React.createElement(hand)
-          ])
-        ])
-        ]);
-    }
-  });
-  React.render(React.createElement(react, null), document.getElementById("react"));
-  document.getElementById('name').setAttribute("oninput", "setName();");
-  */
-  function start() {
-    socket.write(JSON.stringify({type: 'start'}));
-  }
+      You can add webfonts, meta tags, or analytics to this file.
+      The build step will place the bundled scripts into the <body> tag.
 
-  function setName() {
-    document.getElementById('name').setAttribute("placeholder", socket.id);
-    socket.write(JSON.stringify({ type: 'name', name: document.getElementById('name').value || socket.id }));
-  }
-
-  function speak(text) {
-    var msg = new window.SpeechSynthesisUtterance(text);
-    window.speechSynthesis.speak(msg);
-  }
-
-  function replace(black, whites) {
-    //black: single black card
-    //whites: array of white cards
-    //if no _, append to end
-    if (black.text.indexOf("_") === -1) {
-      return black.text + " " + whites[0];
-    }
-    else {
-      var replace = black.text;
-      whites.forEach(function(w) {
-        //replace _ with white cards
-        //remove punctuation from white card
-        replace = replace.replace("_", w.slice(0, -1));
-      });
-      //capitalize resulting string
-      return replace.slice(0, 1).toUpperCase() + replace.slice(1);
-    }
-  }
-
-  function renderCard(options) {
-    //options.text
-    //options.type
-    //options.id
-    //click to play a card, continue playing until pick number fulfilled
-    var card = React.createClass({
-      getInitialState: function() {
-        return null;
-      },
-      handleClick: function() {
-        if (options.playable) {
-          console.log(options.id);
-          socket.emit("play", options.id);
-          //TODO display played cards "on deck"
-        }
-        if (options.selectable) {
-          console.log(options.id);
-          socket.emit("select", options.id);
-        }
-      },
-      render: function() {
-        return React.createElement("div", {
-          className: "cards " + options.style,
-          key: options.id,
-          onClick: function(e) {
-            e.preventDefault();
-            this.handleClick();
-          }.bind(this),
-          dangerouslySetInnerHTML: {
-            "__html": options.text
-          }
-        });
-      }
-    });
-    return React.createElement(card);
-  }
-</script>
-
+      To begin the development, run `npm start` or `yarn start`.
+      To create a production bundle, use `npm run build` or `yarn build`.
+    -->
+  </body>
 </html>
