@@ -1,108 +1,99 @@
 const async = require('async');
 const cards = require('./data/cards.json');
-//user enters a name to join the game
-//start game when capacity is reached
-//TODO implement multiple games
-//TODO allow spectating
-//TODO shareable urls
+// TODO implement multiple games
+// TODO allow spectating
+// TODO shareable urls
+// TODO support deck selection
+// TODO customizable room size
 
 function newGame(wss) {
-  // TODO support deck selection
   const deck = cards["Base"];
   const black = deck.black.map(index => cards.blackCards[index]);
   const white = deck.white.map(index => cards.whiteCards[index]);
   const players = [];
-  let tempWhites = {};
-  const board = {
+  let board = {
     black: {},
-    whites: {},
+    whites: [],
+    whiteMappings: {},
     czar: -1,
     turn: 0,
-    black_remaining: null,
-    white_remaining: null,
+    black_remaining: black.length,
+    white_remaining: white.length,
     selected: false
   };
   shuffle(black);
   shuffle(white);
   wss.on('connection', function(socket) {
+    socket.on('close', function() {
+      players.splice(players.indexOf(socket), 1);
+      updateRoster();
+    });
     socket.on('message', function incoming(data) {
       const message = JSON.parse(data);
-      if (message.type === 'disconnect') {
-        players.splice(players.indexOf(socket), 1);
-        console.log("%s left", socket.id);
-        //TODO handle player leaving game
-        updateRoster();
-      }
-      else if (message.type === 'play') {
-        let index = message.index;
-        var whites = tempWhites;
-        var playerIndex = players.indexOf(socket);
-        //ensure the player has cards left to play and is not czar
-        if ((!whites[playerIndex] || whites[playerIndex].length < board.black.pick) && socket.status !== "czar") {
-          index = Number(index);
-          //TODO use scrambled indices
-          if (!whites[playerIndex]) {
-            whites[playerIndex] = [];
+      if (message.type === 'play') {
+        const cardIndex = message.data;
+        const playerIndex = players.indexOf(socket);
+        if (socket.status !== "czar") {
+          let playerWhites = board.whites.find(w => w.playerIndex === playerIndex);
+          if (!playerWhites) {
+            playerWhites = { playerIndex, cards: [] };
+            board.whites.push(playerWhites);
           }
-          whites[playerIndex].push(socket.hand[index]);
-          //remove card from player's hand
-          socket.hand.splice(index, 1);
-          //if player has no cards left to play
-          if (whites[playerIndex].length >= board.black.pick) {
-            //notify all players that this player moved
-            socket.status = "ready";
-            //if all active players have moved
-            if (checkReady()) {
-              //reveal all played cards
-              board.whites = tempWhites;
+          //ensure the player has cards left to play
+          if (playerWhites.cards.length < board.black.pick) {
+            playerWhites.cards.push(socket.hand[cardIndex]);
+            //remove card from player's hand
+            socket.hand.splice(cardIndex, 1);
+            //if player has no cards left to play
+            if (playerWhites.cards.length >= board.black.pick) {
+              //notify all players that this player moved
+              socket.status = 'played';
             }
+            updateRoster();
           }
-          updateRoster();
         }
       }
       else if (message.type === 'select') {
-        let index = message.index;
-        index = Number(index);
-        //TODO use scrambled indices
+        const index = message.data;
+        const mappedIndex = board.whiteMappings[index];
+        const player = players[mappedIndex];
+        const card = board.whites[index];
         //check that there hasn't been a winner selected this turn
         //make sure this player is czar
-        if (socket.status === "czar" && !board.selected) {
-          players[index].score += 1;
-          players[index].winner = true;
-          //reveal winner, increment score
-          //remove all from board except winner
-          board.whites = [board.whites[index]];
+        if (socket.status === "czar" && checkAllPlayersReady() && !board.selected && player && card) {
+          player.score += 1;
+          player.winner = true;
+          card.winner = true;
           board.selected = true;
           updateRoster();
+          // TODO make this a button click to advance?
           setTimeout(runTurn, 1000);
         }
       }
       else if (message.type === 'join') {
-        //player joining the game
+        // TODO reject if there's already a player with this name in the room
         socket.name = String(message.name);
         socket.score = 0;
         socket.hand = [];
         players.push(socket);
         updateRoster();
-        if (board.czar === -1 && players >= 2) {
+        if (board.czar === -1 && players.length >= 3) {
           runTurn();
-          updateRoster();
         }
       }
     });
   });
 
   function runTurn() {
-    //TODO scramble indices to hide player identities
-    //restore cards to hands
+    console.log('starting turn');
+    // TODO check for out of cards (end game)
+    // restore cards to hands
     replenish();
-    //TODO check for out of cards (end game)
-    //clear temp
-    tempWhites = {};
-    board = Object.assign({}, board, { 
-      selected: false, 
-      whites: {}, 
+    board = {
+      selected: false,
       black: black.pop(),
+      whites: [],
+      whiteMappings: {},
       //czar becomes next player
       czar: (board.czar + 1) % players.length,
       //increment turn number
@@ -110,7 +101,7 @@ function newGame(wss) {
       //count number of cards remaining in play
       black_remaining: black.length,
       white_remaining: white.length,
-    });
+    };
     players.forEach(function(p, i) {
       if (i === board.czar) {
         p.status = "czar";
@@ -120,14 +111,14 @@ function newGame(wss) {
       }
       p.winner = false;
     });
+    updateRoster();
   }
 
   function updateRoster() {
     //iterate through each connected client and get their name, then broadcast the roster to everyone
     async.map(players, function(p, cb) {
       //notify each player of their hand
-      // console.log(p.hand);
-      p.send(JSON.stringify({type: 'hand', data: JSON.stringify(p.hand)}));
+      p.send(JSON.stringify({ type: 'hand', data: p.hand }));
       cb(null, {
         name: p.name,
         score: p.score,
@@ -139,14 +130,32 @@ function newGame(wss) {
         console.error(err);
       }
       //notify every player of roster/board state
-      wss.broadcast('roster', names);
-      wss.broadcast('board', board);
+      wss.broadcast(JSON.stringify({ type: 'roster', data: names }));
+      let newBoard = board;
+      if (board.selected) {
+        // Do nothing to the data
+      }
+      else if (checkAllPlayersReady()) {
+        // Hide the identities, but show the cards so the czar can pick (scramble the cards)
+        shuffle(board.whites);
+        // Map the scrambled IDs to the player indexes so we can look up who won later
+        board.whites.forEach((w, i) => {
+          board.whiteMappings[i] = w.playerIndex;
+        });
+        const hiddenWhites = board.whites.map(w => ({ cards: w.cards }));
+        newBoard = { ...board, whites: hiddenWhites };
+      }
+      else {
+        // Hide the cards, but show the identities so we know who moved
+        newBoard = { ...board, whites: board.whites.map(w => ({ playerIndex: w.playerIndex })) };
+      }
+      wss.broadcast(JSON.stringify({ type: 'board', data: newBoard }));
     });
   }
 
-  function checkReady() {
-    for (var i = 0; i < players.length; i++) {
-      if (players[i].status !== 'ready' && players[i].status !== 'czar') {
+  function checkAllPlayersReady() {
+    for (let i = 0; i < players.length; i++) {
+      if (players[i].status !== 'played' && players[i].status !== 'czar') {
         return false;
       }
     }
@@ -154,16 +163,14 @@ function newGame(wss) {
   }
 
   function replenish() {
-    //server deals hand to all players from white
+    //server deals hand to all players from white deck
     players.forEach(function(p) {
-      var hand_max = 10;
+      const hand_max = 10;
       while (p.hand.length < hand_max) {
         p.hand.push(white.pop());
       }
-      // console.log(p.hand);
     });
   }
-
 }
 
 function shuffle(o) {
