@@ -1,12 +1,12 @@
 .App-logo {
   animation: App-logo-spin infinite 20s linear;
-  height: 80px;
+  height: 60px;
 }
 
 .App-header {
   text-align: center;
   background-color: #222;
-  height: 150px;
+  height: 120px;
   padding: 20px;
   color: white;
 }
@@ -24,13 +24,13 @@
   background: #FFF;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, .5);
-  margin: 10px;
+  margin: 5px;
   padding: 1em;
   text-align: left;
-  height: 180px;
-  width: 120px;
+  height: 150px;
+  width: 100px;
   display: inline-flex;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   position: relative;
   font-family: Arial, Helvetica, sans-serif
@@ -39,4 +39,18 @@
 .alignBottom {
   position: absolute;
   bottom: 8px;
+}
+
+.section {
+  border: 1px #DDD solid;
+  background: #DDD;
+  padding: 8px;
+  margin: 8px;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, .5);
+  text-align: center;
+}
+
+.Game {
+  max-width: 1200px;
+  margin: 0 auto;
 }

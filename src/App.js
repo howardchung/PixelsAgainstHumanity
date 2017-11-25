@@ -16,32 +16,61 @@ const Card = ({ socket, text, type, id, playable, onClick, style, pick, owner })
 };
 
 const Roster = ({ roster }) => {
-  return roster.map(p => (
-    <div key={p.name} style={{ display: 'flex', justifyContent: 'space-between'}}>
-    <div>{`${p.name} (${p.status})`}</div>
-    <div>{p.score + ' points'}</div>
-    {/*<div>{p.status}</div>*/}
-  </div>));
+  return (<div className="section">
+    <h3>Players</h3>
+      <div>
+        {roster.map(p => (
+        <div key={p.name} style={{ display: 'flex', justifyContent: 'space-between'}}>
+          <div>{`${p.name}`}</div>
+          <div>{p.score + ' points'}</div>
+          {/*<div>{p.status}</div>*/}
+        </div>))}
+      </div>
+  </div>);
 };
 
-//TODO gray out the hand when player isn't czar
+//TODO gray out the hand when player is judge
+//TODO display "waiting for {name} to pick winner"
+//TODO display "{name} picked {name} as the winner!"
+//TODO glow effect on the winner
 const Hand = ({ hand, playFn }) => {
-  return (<div>
-    {hand.map((card, index) => (<Card key={card} text={card} id={index} onClick={playFn} style={{ background: '#FFF', cursor: 'pointer' }} />))}
+  return (<div className="section">
+    <h3>Hand</h3>
+    <div style={{ maxWidth: '700px', margin: '0 auto' }}>
+      {hand.map((card, index) => (<Card key={card} text={card} id={index} onClick={playFn} style={{ background: '#FFF', cursor: 'pointer' }} />))}
+    </div>
   </div>);
 };
 
 const Board = ({ roster, board, selectFn }) => {
-  return (<div>
-      {board.black && board.black.text && <Card text={board.black.text} pick={board.black.pick} style={{ background: '#000', color: "#FFF" }} />}
-      {board.whites.map((white, i) => (<Card id={i} text={white.cards ? white.cards.join(' / ') : `Card hidden`} owner={roster[white.playerIndex] && roster[white.playerIndex].name} onClick={selectFn} style={{ background: '#FFF', cursor: 'pointer' }} />))}
-      </div>);
+  return (
+    <div className="section" style={{ width: '85%' }}>
+      <h3>
+      Board
+      </h3>
+      <div style={{ textAlign: 'left' }}>
+        {board.black && board.black.text && <Card text={board.black.text} pick={board.black.pick} style={{ background: '#000', color: "#FFF" }} />}
+        {board.whites.map((white, i) => (<Card id={i} text={white.cards ? white.cards.join(' / ') : `Card hidden`} owner={roster[white.playerIndex] && roster[white.playerIndex].name} onClick={selectFn} style={{ background: '#FFF', cursor: 'pointer' }} />))}
+      </div>
+    </div>);
 };
 
 const Deck = ({ board }) => {
-  return (<div>
-    <Card text={board.black_remaining} style={{ background: '#000', color: "#FFF" }} />
-    <Card text={board.white_remaining} style={{ background: '#FFF' }} />
+  return (
+  <div className="section">
+    <h3>Deck</h3>
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between'}}>
+        <div>Black cards</div>
+        <div>{board.black_remaining}</div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between'}}>
+        <div>White cards</div>
+        <div>{board.white_remaining}</div>
+      </div>
+      {/*<Card text={board.black_remaining} style={{ background: '#000', color: "#FFF" }} />*/}
+      {/*<Card text={board.white_remaining} style={{ background: '#FFF' }} />*/}
+    </div>
   </div>);
 };
 
@@ -86,45 +115,43 @@ class App extends Component {
     }
   }
   handlePlay = (id) => {
-    this.state.socket.send(JSON.stringify({ type: "play", data: id }));
+    this.state.socket.send(JSON.stringify({ type: 'play', data: id }));
   }
   handleSelect = (id) => {
-    this.state.socket.send(JSON.stringify({ type: "select", data: id }));
+    this.state.socket.send(JSON.stringify({ type: 'select', data: id }));
+  }
+  handleAdvance = () => {
+    this.state.socket.send(JSON.stringify({type: 'advance' }));
   }
   render() {
+    const judge = this.state.roster.find(p => p.status === 'judge');
     return (
       <div className="App">
         <header className="App-header">
           <img src={logo} className="App-logo" alt="logo" />
           <h1 className="App-title">Hypertext Versus Society</h1>
         </header>
-        <div style={{ textAlign: 'left', padding: '20px' }}>
-          <div style={{ textAlign: 'center' }}>
-          {!this.state.isInGame && (
-          <input 
-            style={{ width: '500px', textAlign: 'center', height: '40px', borderRadius: '5px', fontSize: '24px', filter: 'drop-shadow(5px 5px 5px #000)' }} 
-            placeholder="Type a name to join the game" 
-            onKeyPress={this.handleJoin} 
-          />)}
+        <div className="Game">
+          <div className="section">
+            {!this.state.isInGame ? (<input
+              style={{ width: '500px', textAlign: 'center', height: '40px', borderRadius: '5px', fontSize: '24px' }} 
+              placeholder="Type a name to join the game" 
+              onKeyPress={this.handleJoin} 
+            />) : <div style={{ textAlign: 'left' }}>
+            {judge && <span>{judge.name} is judge.</span>}
+            {this.state.board.selected && (<button onClick={this.handleAdvance}>Next Turn</button>)}
+            </div>}
           </div>
-          <div style={{ display: 'flex', height: '250px' }}>
-            <div style={{ width: '10%', marginRight: '10px' }}>
-              <h3>Players</h3>
-              <div>
-              <Roster roster={this.state.roster} />
-            </div>
-            </div>
-            <div style={{ width: '60%', marginRight: '10px' }}>
-              <h3>Board</h3>
+          {this.state.isInGame && (<div>
+            <div style={{ display: 'flex', height: '300px' }}>
+              <div style={{ width: '15%' }}>
+                <Roster roster={this.state.roster} />
+                <Deck board={this.state.board} />
+              </div>
               <Board roster={this.state.roster} board={this.state.board} selectFn={this.handleSelect} />
             </div>
-            <div style={{ width: '25%'}}>
-              <h3>Deck</h3>
-              <Deck board={this.state.board} />
-            </div>
-          </div>
-          <h3>Hand</h3>
-          <Hand hand={this.state.hand} playFn={this.handlePlay} />
+            <Hand hand={this.state.hand} playFn={this.handlePlay} />
+          </div>)}
         </div>
       </div>
     );

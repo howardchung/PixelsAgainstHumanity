@@ -2,20 +2,20 @@ const async = require('async');
 const cards = require('./data/cards.json');
 // TODO implement multiple games
 // TODO allow spectating
-// TODO shareable urls
+// TODO shareable urls to join rooms
 // TODO support deck selection
 // TODO customizable room size
 
 function newGame(wss) {
-  const deck = cards["Base"];
+  const deck = cards['Base'];
   const black = deck.black.map(index => cards.blackCards[index]);
   const white = deck.white.map(index => cards.whiteCards[index]);
   const players = [];
   let board = {
     black: {},
     whites: [],
-    whiteMappings: {},
-    czar: -1,
+    _whiteMappings: {},
+    judge: -1,
     turn: 0,
     black_remaining: black.length,
     white_remaining: white.length,
@@ -33,7 +33,7 @@ function newGame(wss) {
       if (message.type === 'play') {
         const cardIndex = message.data;
         const playerIndex = players.indexOf(socket);
-        if (socket.status !== "czar") {
+        if (socket.status !== 'judge') {
           let playerWhites = board.whites.find(w => w.playerIndex === playerIndex);
           if (!playerWhites) {
             playerWhites = { playerIndex, cards: [] };
@@ -55,19 +55,22 @@ function newGame(wss) {
       }
       else if (message.type === 'select') {
         const index = message.data;
-        const mappedIndex = board.whiteMappings[index];
+        const mappedIndex = board._whiteMappings[index];
         const player = players[mappedIndex];
         const card = board.whites[index];
         //check that there hasn't been a winner selected this turn
-        //make sure this player is czar
-        if (socket.status === "czar" && checkAllPlayersReady() && !board.selected && player && card) {
+        //make sure this player is judge
+        if (socket.status === 'judge' && checkAllPlayersReady() && !board.selected && player && card) {
           player.score += 1;
           player.winner = true;
           card.winner = true;
           board.selected = true;
           updateRoster();
-          // TODO make this a button click to advance?
-          setTimeout(runTurn, 1000);
+        }
+      }
+      else if (message.type === 'advance') {
+        if (socket.status === 'judge' && board.selected) {
+          runTurn();
         }
       }
       else if (message.type === 'join') {
@@ -77,7 +80,7 @@ function newGame(wss) {
         socket.hand = [];
         players.push(socket);
         updateRoster();
-        if (board.czar === -1 && players.length >= 3) {
+        if (board.judge === -1 && players.length >= 3) {
           runTurn();
         }
       }
@@ -93,9 +96,9 @@ function newGame(wss) {
       selected: false,
       black: black.pop(),
       whites: [],
-      whiteMappings: {},
-      //czar becomes next player
-      czar: (board.czar + 1) % players.length,
+      _whiteMappings: {},
+      //judge becomes next player
+      judge: (board.judge + 1) % players.length,
       //increment turn number
       turn: board.turn + 1,
       //count number of cards remaining in play
@@ -103,11 +106,11 @@ function newGame(wss) {
       white_remaining: white.length,
     };
     players.forEach(function(p, i) {
-      if (i === board.czar) {
-        p.status = "czar";
+      if (i === board.judge) {
+        p.status = 'judge';
       }
       else {
-        p.status = "waiting";
+        p.status = 'waiting';
       }
       p.winner = false;
     });
@@ -131,16 +134,16 @@ function newGame(wss) {
       }
       //notify every player of roster/board state
       wss.broadcast(JSON.stringify({ type: 'roster', data: names }));
-      let newBoard = board;
+      let newBoard = {...board, _whiteMappings: undefined };
       if (board.selected) {
         // Do nothing to the data
       }
       else if (checkAllPlayersReady()) {
-        // Hide the identities, but show the cards so the czar can pick (scramble the cards)
+        // Hide the identities, but show the cards so the judge can pick (scramble the cards)
         shuffle(board.whites);
         // Map the scrambled IDs to the player indexes so we can look up who won later
         board.whites.forEach((w, i) => {
-          board.whiteMappings[i] = w.playerIndex;
+          board._whiteMappings[i] = w.playerIndex;
         });
         const hiddenWhites = board.whites.map(w => ({ cards: w.cards }));
         newBoard = { ...board, whites: hiddenWhites };
@@ -149,13 +152,14 @@ function newGame(wss) {
         // Hide the cards, but show the identities so we know who moved
         newBoard = { ...board, whites: board.whites.map(w => ({ playerIndex: w.playerIndex })) };
       }
+      // TODO resending the board to everyone is unnecessary (e.g. if a player joins only they need a board update)
       wss.broadcast(JSON.stringify({ type: 'board', data: newBoard }));
     });
   }
 
   function checkAllPlayersReady() {
     for (let i = 0; i < players.length; i++) {
-      if (players[i].status !== 'played' && players[i].status !== 'czar') {
+      if (players[i].status !== 'played' && players[i].status !== 'judge') {
         return false;
       }
     }
