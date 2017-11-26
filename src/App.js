@@ -168,7 +168,7 @@ class App extends Component {
       <div className="App">
         <header className="App-header">
           <img src={logo} className="App-logo" alt="logo" />
-          <div className="title">Hypertext Versus Society</div>
+          <div className="title">Pixels Versus Society</div>
           <div className="subtitle">A Cards Against Humanity clone.</div>
         </header>
         <div className="Game">

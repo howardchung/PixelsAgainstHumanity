@@ -5,7 +5,7 @@ const WebSocket = require('ws');
 const http = require('http');
 const game = require('./game');
 
-app.use(express.static(path.resolve(__dirname, 'public')));
+app.use(express.static(path.resolve(__dirname, 'build')));
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 

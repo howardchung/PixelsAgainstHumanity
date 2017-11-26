@@ -1,5 +1,5 @@
 {
-  "name": "hypertextversussociety",
+  "name": "pixelsversussociety",
   "version": "0.0.0",
   "description": "A Cards Against Humanity clone.",
   "main": "index.js",
@@ -14,8 +14,8 @@
   "author": "Howard Chung",
   "license": "ISC",
   "dependencies": {
-    "async": "^1.2.1",
-    "express": "~4.12.4",
+    "async": "^2.6.0",
+    "express": "^4.16.2",
     "react": "^16.1.1",
     "react-dom": "^16.1.1",
     "react-scripts": "1.0.17",
