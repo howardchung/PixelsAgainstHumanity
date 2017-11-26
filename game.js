@@ -1,10 +1,15 @@
 const async = require('async');
+const WebSocket = require('ws');
 const cards = require('./data/cards.json');
 // TODO implement multiple games
 // TODO allow spectating
 // TODO shareable urls to join rooms
 // TODO support deck selection
-// TODO customizable room size
+// TODO handle disconnects, don't wait for DC'd players and don't pick them as judge
+// TODO handle players connecting after game start (reject or deal them in?)
+// TODO handle game end (track winners?)
+// TODO track card stats
+// TODO clean up finished games
 
 function newGame(wss) {
   const deck = cards['Base'];
@@ -25,7 +30,6 @@ function newGame(wss) {
   shuffle(white);
   wss.on('connection', function(socket) {
     socket.on('close', function() {
-      players.splice(players.indexOf(socket), 1);
       updateRoster();
     });
     socket.on('message', function incoming(data) {
@@ -69,27 +73,40 @@ function newGame(wss) {
         }
       }
       else if (message.type === 'advance') {
-        if (socket.status === 'judge' && board.selected) {
+        if ((board.judge === -1 && players.length >= 3) || (socket.status === 'judge' && board.selected)) {
           runTurn();
         }
       }
       else if (message.type === 'join') {
-        // TODO reject if there's already a player with this name in the room
-        socket.name = String(message.name);
-        socket.score = 0;
-        socket.hand = [];
-        players.push(socket);
-        updateRoster();
-        if (board.judge === -1 && players.length >= 3) {
-          runTurn();
+        // check if there's already a player with this name in the room
+        const existingIndex = players.findIndex(p => p.name === message.name);
+        const existingPlayer = players[existingIndex];
+        if (existingPlayer && existingPlayer.readyState === WebSocket.OPEN) {
+          // refuse the join attempt
+          return socket.send(JSON.stringify({type: 'join_refuse'}));
+        } else if (existingPlayer && existingPlayer.connectionState !== WebSocket.OPEN) {
+          // reconnect this player
+          socket.name = existingPlayer.name;
+          socket.score = existingPlayer.score;
+          socket.hand = existingPlayer.hand;
+          socket.id = existingPlayer.id;
+          players[existingIndex] = socket;
+        } else if (!existingPlayer) {
+          // new player
+          socket.name = String(message.name);
+          socket.score = 0;
+          socket.hand = [];
+          players.push(socket);
+          socket.id = players.length;
         }
+        socket.send(JSON.stringify({type: 'join_ack', data: { id: socket.id, name: socket.name }}));
+        updateRoster();
       }
     });
   });
 
   function runTurn() {
     console.log('starting turn');
-    // TODO check for out of cards (end game)
     // restore cards to hands
     replenish();
     board = {
@@ -121,12 +138,15 @@ function newGame(wss) {
     //iterate through each connected client and get their name, then broadcast the roster to everyone
     async.map(players, function(p, cb) {
       //notify each player of their hand
-      p.send(JSON.stringify({ type: 'hand', data: p.hand }));
+      if (p.readyState === WebSocket.OPEN) {
+        p.send(JSON.stringify({ type: 'hand', data: p.hand }));
+      }
       cb(null, {
         name: p.name,
         score: p.score,
         status: p.status,
         winner: p.winner,
+        readyState: p.readyState,
       });
     }, function(err, names) {
       if (err) {

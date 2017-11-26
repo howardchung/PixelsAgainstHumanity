@@ -16,12 +16,12 @@ const Card = ({ socket, text, type, id, playable, onClick, style, pick, owner })
 };
 
 const Roster = ({ roster }) => {
-  return (<div className="section">
+  return (<div className="section primary" style={{ width: '20%' }}>
     <h3>Players</h3>
       <div>
         {roster.map(p => (
-        <div key={p.name} style={{ display: 'flex', justifyContent: 'space-between'}}>
-          <div>{`${p.name}`}</div>
+        <div key={p.name} style={{ display: 'flex', justifyContent: 'space-between', height: '30px' }}>
+          <div><span className="filled-circle" style={{ background: p.readyState === 1 ? '#00ff00' : '#ff0000' }}/>{`${p.name}`}</div>
           <div>{p.score + ' points'}</div>
           {/*<div>{p.status}</div>*/}
         </div>))}
@@ -33,31 +33,41 @@ const Roster = ({ roster }) => {
 //TODO display "waiting for {name} to pick winner"
 //TODO display "{name} picked {name} as the winner!"
 //TODO glow effect on the winner
+//TODO hover effect on hand
+//TODO invite friends link
+//TODO github link
 const Hand = ({ hand, playFn }) => {
-  return (<div className="section">
+  return (<div className="section success">
     <h3>Hand</h3>
     <div style={{ maxWidth: '700px', margin: '0 auto' }}>
-      {hand.map((card, index) => (<Card key={card} text={card} id={index} onClick={playFn} style={{ background: '#FFF', cursor: 'pointer' }} />))}
+      {hand.map((card, index) => (<Card key={card} text={card} id={index} onClick={playFn} style={{ background: '#FFF', color: '#000', cursor: 'pointer' }} />))}
     </div>
   </div>);
 };
 
 const Board = ({ roster, board, selectFn }) => {
   return (
-    <div className="section" style={{ width: '85%' }}>
+    <div className="section link" style={{ width: '80%' }}>
       <h3>
       Board
       </h3>
       <div style={{ textAlign: 'left' }}>
         {board.black && board.black.text && <Card text={board.black.text} pick={board.black.pick} style={{ background: '#000', color: "#FFF" }} />}
-        {board.whites.map((white, i) => (<Card id={i} text={white.cards ? white.cards.join(' / ') : `Card hidden`} owner={roster[white.playerIndex] && roster[white.playerIndex].name} onClick={selectFn} style={{ background: '#FFF', cursor: 'pointer' }} />))}
+        {board.whites.map((white, i) => (
+          <Card 
+            id={i} 
+            text={white.cards ? white.cards.join('\n\n') : ''} 
+            owner={roster[white.playerIndex] && roster[white.playerIndex].name} 
+            onClick={selectFn} 
+            style={{ background: '#FFF', color: '#000', cursor: 'pointer' }} 
+          />))}
       </div>
     </div>);
 };
 
 const Deck = ({ board }) => {
   return (
-  <div className="section">
+    <div className="section light" style={{ textAlign: 'left', flex: 1 }}>
     <h3>Deck</h3>
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between'}}>
@@ -70,6 +80,21 @@ const Deck = ({ board }) => {
       </div>
       {/*<Card text={board.black_remaining} style={{ background: '#000', color: "#FFF" }} />*/}
       {/*<Card text={board.white_remaining} style={{ background: '#FFF' }} />*/}
+    </div>
+  </div>);
+};
+
+const GameStatus = ({ self, roster, board, handleAdvance }) => {
+  const judge = roster.find(p => p.status === 'judge');
+  return (
+  <div className="section dark" style={{ flex: 1}}>
+    <div style={{ textAlign: 'left' }}>
+      <h3>Status</h3>
+      {<div>Connected as {self.name}</div>}
+      {board.judge === -1 && <span>Waiting for players...</span>}
+      {judge && <span>{judge.name} is judge.</span>}
+      {(board.judge === -1 || board.selected) && (<div><button onClick={handleAdvance}>{board.judge === -1 ? 'Start Game' : 'Next Turn'}</button></div>)}
+      {/*<pre>{JSON.stringify(board)}</pre>*/}
     </div>
   </div>);
 };
@@ -95,22 +120,25 @@ class App extends Component {
       else if (json.type === 'board') {
         this.setState({ board: json.data });
       }
+      else if (json.type === 'join_ack') {
+        this.setState({ self: json.data });
+      } else if (json.type === 'join_refuse') {
+        this.setState({ self: { msg: 'A player with this name is already connected, please choose another' }});
+      }
     }.bind(this);
     this.state = {
       roster: [],
+      self: {},
       hand: [],
       board: {
         black: {},
         whites: [],
       },
       socket,
-      isInGame: false,
     };
   }
-  componentDidMount() {}
   handleJoin = (e) => {
     if (e.key === 'Enter') {
-      this.setState({ isInGame: true });
       this.state.socket.send(JSON.stringify({ type: 'join', name: e.target.value }));
     }
   }
@@ -121,37 +149,40 @@ class App extends Component {
     this.state.socket.send(JSON.stringify({ type: 'select', data: id }));
   }
   handleAdvance = () => {
-    this.state.socket.send(JSON.stringify({type: 'advance' }));
+    this.state.socket.send(JSON.stringify({ type: 'advance' }));
   }
   render() {
-    const judge = this.state.roster.find(p => p.status === 'judge');
+    const { self, board, roster, hand } = this.state;
+    const NameInput = (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+      <div>
+      {self && self.msg && (<div className="section warning">{self && self.msg}</div>)}
+      <input
+        style={{ width: '600px', maxWidth: '600px', textAlign: 'center', height: '60px', borderRadius: '8px', fontSize: '24px' }} 
+        placeholder="Type a name to join the game" 
+        onKeyPress={this.handleJoin}
+      />
+      </div>
+    </div>);
     return (
       <div className="App">
         <header className="App-header">
           <img src={logo} className="App-logo" alt="logo" />
-          <h1 className="App-title">Hypertext Versus Society</h1>
+          <div className="title">Hypertext Versus Society</div>
+          <div className="subtitle">A Cards Against Humanity clone.</div>
         </header>
         <div className="Game">
-          <div className="section">
-            {!this.state.isInGame ? (<input
-              style={{ width: '500px', textAlign: 'center', height: '40px', borderRadius: '5px', fontSize: '24px' }} 
-              placeholder="Type a name to join the game" 
-              onKeyPress={this.handleJoin} 
-            />) : <div style={{ textAlign: 'left' }}>
-            {judge && <span>{judge.name} is judge.</span>}
-            {this.state.board.selected && (<button onClick={this.handleAdvance}>Next Turn</button>)}
-            </div>}
-          </div>
-          {this.state.isInGame && (<div>
-            <div style={{ display: 'flex', height: '300px' }}>
-              <div style={{ width: '15%' }}>
-                <Roster roster={this.state.roster} />
-                <Deck board={this.state.board} />
-              </div>
-              <Board roster={this.state.roster} board={this.state.board} selectFn={this.handleSelect} />
+          {self && self.id ? (<div>
+            <div style={{ display: 'flex' }}>
+              <GameStatus roster={roster} board={board} handleAdvance={this.handleAdvance} self={self} />
+              <Deck board={board} />
             </div>
-            <Hand hand={this.state.hand} playFn={this.handlePlay} />
-          </div>)}
+            <div style={{ display: 'flex' }}>
+              <Roster roster={roster} />
+              <Board roster={roster} board={this.state.board} selectFn={this.handleSelect} />
+            </div>
+            <Hand hand={hand} playFn={this.handlePlay} />
+          </div>) : NameInput}
         </div>
       </div>
     );

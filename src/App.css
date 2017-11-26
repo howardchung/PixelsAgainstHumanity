@@ -1,23 +1,23 @@
 .App-logo {
   animation: App-logo-spin infinite 20s linear;
-  height: 60px;
+  height: 50px;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .App-header {
   text-align: center;
   background-color: #222;
-  height: 120px;
-  padding: 20px;
+  height: 110px;
+  padding: 15px;
   color: white;
-}
-
-.App-title {
-  font-size: 1.5em;
-}
-
-@keyframes App-logo-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
 }
 
 .cards {
@@ -27,7 +27,7 @@
   margin: 5px;
   padding: 1em;
   text-align: left;
-  height: 150px;
+  height: 140px;
   width: 100px;
   display: inline-flex;
   font-size: 12px;
@@ -42,15 +42,83 @@
 }
 
 .section {
-  border: 1px #DDD solid;
-  background: #DDD;
+  /*border: 1px #DDD solid;*/
   padding: 8px;
   margin: 8px;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, .5);
+  box-shadow: 0 3px 3px rgba(0, 0, 0, .5);
   text-align: center;
 }
 
 .Game {
   max-width: 1200px;
   margin: 0 auto;
+}
+
+.white {
+  background: hsl(0, 0%, 100%);
+  color: #000;
+}
+
+.black {
+  background: hsl(0, 0%, 4%);
+  color: #fff;
+}
+
+.light {
+  background: hsl(0, 0%, 96%);
+  color: #000;
+}
+
+.dark {
+  background: hsl(0, 0%, 21%);
+  color: #fff;
+}
+
+.primary {
+  background: hsl(171, 100%, 41%);
+  color: #fff;
+}
+
+.link {
+  background: hsl(217, 71%, 53%);
+  color: #fff;
+}
+
+.info {
+  background: hsl(204, 86%, 53%);
+  color: #fff;
+}
+
+.success {
+  background: hsl(141, 71%, 48%);
+  color: #fff;
+}
+
+.warning {
+  background: hsl(48, 100%, 67%);
+  color: #000;
+}
+
+.danger {
+  background: hsl(348, 100%, 61%);
+  color: #fff;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.125;
+}
+
+.subtitle {
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.filled-circle {
+  padding: 2px 11px;
+  margin: 4px;
+  border-radius: 100%;
+  box-shadow: 0 0 3px rgba(0, 0, 0, 1);
 }
