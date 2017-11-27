@@ -9,7 +9,7 @@
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject",
     "server": "node server/index.js",
-    "dev": "nodemon server/index.js"
+    "dev": "nodemon server/index.js  --ignore src/"
   },
   "author": "Howard Chung",
   "license": "ISC",

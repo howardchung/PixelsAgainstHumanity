@@ -9,7 +9,7 @@ const Card = ({ socket, text, type, id, playable, onClick, style, pick, owner })
     className={"cards"}
     onClick={() => onClick(id)}
   >
-  <div>{decodeEntities(text)}</div>
+  {text.map(t => (<div style={{ padding: '4px 0px' }}>{decodeEntities(t)}</div>))}
   {pick && <div className="alignBottom">Pick {pick}</div>}
   {owner && <div className="alignBottom">{owner}</div>}
   </div>);
@@ -37,11 +37,12 @@ const Roster = ({ roster, self }) => {
 //TODO hover effect on hand
 //TODO invite friends link
 //TODO github link
+//TODO render empty card placeholders
 const Hand = ({ hand, self, board, playFn }) => {
   return (<div className="section dark">
     <h3>Hand</h3>
-    <div style={{ maxWidth: '700px', margin: '0 auto', opacity: self.id === board.judge ? 0.5 : 1 }}>
-      {hand.map((card, index) => (<Card key={card} text={card} id={index} onClick={playFn} style={{ background: '#FFF', color: '#000', cursor: 'pointer' }} />))}
+    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '700px', margin: '0 auto', opacity: self.id === board.judge ? 0.5 : 1 }}>
+      {hand.map((card, index) => (<Card key={card} text={[card]} id={index} onClick={playFn} style={{ background: '#FFF', color: '#000', cursor: 'pointer' }} />))}
     </div>
   </div>);
 };
@@ -54,11 +55,11 @@ const Board = ({ roster, board, selectFn }) => {
       Board
       </h3>
       <div style={{ display: 'flex' }}>
-        {board.black && board.black.text && <Card text={board.black.text} pick={board.black.pick} style={{ background: '#000', color: "#FFF" }} />}
+        {board.black && board.black.text && <Card text={[board.black.text]} pick={board.black.pick} style={{ background: '#000', color: "#FFF" }} />}
         {board.whites.map((white, i) => (
           <Card
             id={i} 
-            text={white.cards ? white.cards.join('\n\n') : ''} 
+            text={white.cards} 
             owner={roster[white.playerIndex] && roster[white.playerIndex].name} 
             onClick={selectFn} 
             style={{ background: '#FFF', color: '#000', cursor: 'pointer' }} 
@@ -201,7 +202,7 @@ export default App;
 
 function decodeEntities(s) {
   var str;
-  var temp = document.createElement('p');
+  var temp = document.createElement('pre');
   temp.innerHTML = s;
   str = temp.textContent || temp.innerText;
   temp = null;

@@ -12,7 +12,7 @@ const cards = require('../data/cards.json');
 
 function newGame(wss) {
   const deck = cards['Base'];
-  const black = deck.black.map(index => cards.blackCards[index]);
+  const black = deck.black.map(index => cards.blackCards[index]).filter(card => card.pick > 1);
   const white = deck.white.map(index => cards.whiteCards[index]);
   const players = [];
   let board = {
@@ -54,7 +54,7 @@ function newGame(wss) {
               //notify all players that this player moved
               socket.status = 'played';
             }
-            updateHand();
+            updateHand(socket);
             updateRoster();
             updateBoard();
           }
@@ -94,6 +94,7 @@ function newGame(wss) {
           socket.score = existingPlayer.score;
           socket.hand = existingPlayer.hand;
           socket.id = existingPlayer.id;
+          socket.status = existingPlayer.status;
           players[existingIndex] = socket;
         }
         else if (!existingPlayer) {
@@ -101,12 +102,14 @@ function newGame(wss) {
           socket.name = String(message.name);
           socket.score = 0;
           socket.hand = [];
+          socket.id = players.length + 1;
+          socket.status = null;
           players.push(socket);
-          socket.id = players.length;
         }
         wss.send(socket, JSON.stringify({ type: 'join_ack', data: { id: socket.id, name: socket.name } }));
         updateRoster();
         updateBoard(socket);
+        updateHand(socket);
       }
     });
   });
@@ -144,18 +147,22 @@ function newGame(wss) {
     const names = players.map(p => ({
       name: p.name,
       score: p.score,
-      winner: p.winner,
-      readyState: p.readyState,
       id: p.id,
+      status: p.status,
+      readyState: p.readyState,
     }));
     wss.broadcast(JSON.stringify({ type: 'roster', data: names }));
   }
   
-  function updateHand() {
-    players.forEach(p => {
-      //notify each player of their hand
-      wss.send(p, JSON.stringify({ type: 'hand', data: p.hand }));
-    });
+  function updateHand(socket) {
+    if (socket) {
+      wss.send(socket, JSON.stringify({ type: 'hand', data: socket.hand }));
+    } else {
+      players.forEach(p => {
+        //notify each player of their hand
+        wss.send(p, JSON.stringify({ type: 'hand', data: p.hand }));
+      });
+    }
   }
   
   function updateBoard(socket) {
