@@ -9,11 +9,16 @@ app.use(express.static(path.resolve(__dirname, 'build')));
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
+wss.send = function send(socket, data) {
+  if (socket.readyState === WebSocket.OPEN) {
+    console.log('[SENT]', `[id: ${socket.id}]`, data);
+    socket.send(data);
+  }
+};
+
 wss.broadcast = function broadcast(data) {
   wss.clients.forEach(function each(client) {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(data);
-    }
+    wss.send(client, data);
   });
 };
 

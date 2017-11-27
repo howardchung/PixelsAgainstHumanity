@@ -8,13 +8,12 @@
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject",
-    "server": "PORT=3002 node index.js",
-    "dev": "PORT=3002 nodemon index.js"
+    "server": "node server/index.js",
+    "dev": "nodemon server/index.js"
   },
   "author": "Howard Chung",
   "license": "ISC",
   "dependencies": {
-    "async": "^2.6.0",
     "express": "^4.16.2",
     "react": "^16.1.1",
     "react-dom": "^16.1.1",

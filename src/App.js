@@ -15,46 +15,48 @@ const Card = ({ socket, text, type, id, playable, onClick, style, pick, owner })
   </div>);
 };
 
-const Roster = ({ roster }) => {
-  return (<div className="section primary" style={{ width: '20%' }}>
+const Roster = ({ roster, self }) => {
+  return (<div className="section info" style={{ width: '20%' }}>
     <h3>Players</h3>
-      <div>
-        {roster.map(p => (
-        <div key={p.name} style={{ display: 'flex', justifyContent: 'space-between', height: '30px' }}>
-          <div><span className="filled-circle" style={{ background: p.readyState === 1 ? '#00ff00' : '#ff0000' }}/>{`${p.name}`}</div>
-          <div>{p.score + ' points'}</div>
-          {/*<div>{p.status}</div>*/}
-        </div>))}
-      </div>
+    <div>
+      {roster.map(p => (
+      <div key={p.name} style={{ display: 'flex', justifyContent: 'space-between', height: '30px', fontWeight: p.id === self.id ? 700 : 400 }}>
+        <div>
+          <span className="filled-circle" style={{ background: p.readyState === 1 ? '#00ff00' : '#ff0000' }} />
+          {`${p.name}`}
+        </div>
+        <div>{p.score + ' points'}</div>
+        {/*<div>{p.status}</div>*/}
+      </div>))}
+    </div>
   </div>);
 };
 
-//TODO gray out the hand when player is judge
-//TODO display "waiting for {name} to pick winner"
-//TODO display "{name} picked {name} as the winner!"
-//TODO glow effect on the winner
+//TODO optimize for mobile
+//TODO fix vertical overflow
 //TODO hover effect on hand
 //TODO invite friends link
 //TODO github link
-const Hand = ({ hand, playFn }) => {
-  return (<div className="section success">
+const Hand = ({ hand, self, board, playFn }) => {
+  return (<div className="section dark">
     <h3>Hand</h3>
-    <div style={{ maxWidth: '700px', margin: '0 auto' }}>
+    <div style={{ maxWidth: '700px', margin: '0 auto', opacity: self.id === board.judge ? 0.5 : 1 }}>
       {hand.map((card, index) => (<Card key={card} text={card} id={index} onClick={playFn} style={{ background: '#FFF', color: '#000', cursor: 'pointer' }} />))}
     </div>
   </div>);
 };
 
+//TODO glow effect on the winner
 const Board = ({ roster, board, selectFn }) => {
   return (
-    <div className="section link" style={{ width: '80%' }}>
+    <div className="section success" style={{ width: '80%' }}>
       <h3>
       Board
       </h3>
-      <div style={{ textAlign: 'left' }}>
+      <div style={{ display: 'flex' }}>
         {board.black && board.black.text && <Card text={board.black.text} pick={board.black.pick} style={{ background: '#000', color: "#FFF" }} />}
         {board.whites.map((white, i) => (
-          <Card 
+          <Card
             id={i} 
             text={white.cards ? white.cards.join('\n\n') : ''} 
             owner={roster[white.playerIndex] && roster[white.playerIndex].name} 
@@ -85,24 +87,35 @@ const Deck = ({ board }) => {
 };
 
 const GameStatus = ({ self, roster, board, handleAdvance }) => {
-  const judge = roster.find(p => p.status === 'judge');
+  const judge = roster.find(p => p.id === board.judge);
   return (
   <div className="section dark" style={{ flex: 1}}>
     <div style={{ textAlign: 'left' }}>
       <h3>Status</h3>
-      {<div>Connected as {self.name}</div>}
-      {board.judge === -1 && <span>Waiting for players...</span>}
-      {judge && <span>{judge.name} is judge.</span>}
-      {(board.judge === -1 || board.selected) && (<div><button onClick={handleAdvance}>{board.judge === -1 ? 'Start Game' : 'Next Turn'}</button></div>)}
-      {/*<pre>{JSON.stringify(board)}</pre>*/}
+      {board.judge === 0 && <span>Waiting for game start (3 players minimum)...</span>}
+      {judge && board.selected && <span>{judge.name} picked the winner! Waiting for {judge.name} to advance to the next turn...</span>}
+      {judge && !board.selected && !board.allPlayersReady && <span>{judge.name} is judge. Waiting for players to play cards...</span>}
+      {judge && !board.selected && board.allPlayersReady && <span>All players played! Waiting for {judge.name} to pick the winner...</span>}
     </div>
   </div>);
 };
 
+const NameInput = ({ self, handleJoin }) => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+    <div>
+    <input
+      style={{ width: '600px', maxWidth: '600px', textAlign: 'center', height: '60px', borderRadius: '8px', fontSize: '24px' }} 
+      placeholder="Type a name to join the game" 
+      onKeyPress={handleJoin}
+    />
+    {self && self.msg && (<div className="section warning">{self && self.msg}</div>)}
+    </div>
+  </div>);
+
 class App extends Component {
   constructor() {
     super();
-    const socket = new WebSocket(process.env.REACT_APP_SERVER_HOST);
+    const socket = new WebSocket(process.env.REACT_APP_SERVER_HOST || 'wss://' + window.location.host);
     socket.onopen = function() {
       const urlState = querystring.parse(window.location.search.substring(1));
       if (urlState.name) {
@@ -153,17 +166,7 @@ class App extends Component {
   }
   render() {
     const { self, board, roster, hand } = this.state;
-    const NameInput = (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-      <div>
-      {self && self.msg && (<div className="section warning">{self && self.msg}</div>)}
-      <input
-        style={{ width: '600px', maxWidth: '600px', textAlign: 'center', height: '60px', borderRadius: '8px', fontSize: '24px' }} 
-        placeholder="Type a name to join the game" 
-        onKeyPress={this.handleJoin}
-      />
-      </div>
-    </div>);
+    console.log(this.state);
     return (
       <div className="App">
         <header className="App-header">
@@ -173,16 +176,21 @@ class App extends Component {
         </header>
         <div className="Game">
           {self && self.id ? (<div>
+            {(<div style={{ display: 'flex', justifyContent: 'center'}}>
+              <button className="button" onClick={this.handleAdvance} disabled={!((board.judge === 0 && roster.length >= 3) || (self.id === board.judge && board.selected))}>
+                {board.judge === 0 ? 'Start Game' : 'Next Turn'}
+                </button>
+             </div>)}
             <div style={{ display: 'flex' }}>
               <GameStatus roster={roster} board={board} handleAdvance={this.handleAdvance} self={self} />
               <Deck board={board} />
             </div>
             <div style={{ display: 'flex' }}>
-              <Roster roster={roster} />
+              <Roster roster={roster} self={self} />
               <Board roster={roster} board={this.state.board} selectFn={this.handleSelect} />
             </div>
-            <Hand hand={hand} playFn={this.handlePlay} />
-          </div>) : NameInput}
+            <Hand hand={hand} self={self} board={board} playFn={this.handlePlay} />
+          </div>) : <NameInput self={self} handleJoin={this.handleJoin} />}
         </div>
       </div>
     );

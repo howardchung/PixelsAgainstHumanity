@@ -1,3 +1,8 @@
+.App {
+  background-color: #222;
+  height: 100vh;
+}
+
 .App-logo {
   animation: App-logo-spin infinite 20s linear;
   height: 50px;
@@ -15,9 +20,14 @@
 .App-header {
   text-align: center;
   background-color: #222;
-  height: 110px;
   padding: 15px;
   color: white;
+}
+
+.Game {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px;
 }
 
 .cards {
@@ -30,8 +40,8 @@
   height: 140px;
   width: 100px;
   display: inline-flex;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 500;
   position: relative;
   font-family: Arial, Helvetica, sans-serif
 }
@@ -47,11 +57,7 @@
   margin: 8px;
   box-shadow: 0 3px 3px rgba(0, 0, 0, .5);
   text-align: center;
-}
-
-.Game {
-  max-width: 1200px;
-  margin: 0 auto;
+  border-radius: 3px;
 }
 
 .white {
@@ -121,4 +127,59 @@
   margin: 4px;
   border-radius: 100%;
   box-shadow: 0 0 3px rgba(0, 0, 0, 1);
+}
+
+.button {
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  border: 1px solid transparent;
+  border-top-color: transparent;
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+  border-radius: 3px;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+  display: -webkit-inline-box;
+  display: -ms-inline-flexbox;
+  display: inline-flex;
+  font-size: 1rem;
+  height: 2.25em;
+  -webkit-box-pack: start;
+  -ms-flex-pack: start;
+  justify-content: flex-start;
+  line-height: 1.5;
+  padding-bottom: calc(0.375em - 1px);
+  padding-left: calc(0.625em - 1px);
+  padding-right: calc(0.625em - 1px);
+  padding-top: calc(0.375em - 1px);
+  position: relative;
+  vertical-align: top;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  background-color: white;
+  border-color: #dbdbdb;
+  color: #363636;
+  cursor: pointer;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  padding-left: 0.75em;
+  padding-right: 0.75em;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.button[disabled] {
+  background-color: white;
+  border-color: #dbdbdb;
+  box-shadow: none;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
