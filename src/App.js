@@ -59,7 +59,7 @@ const Board = ({ roster, board, selectFn }) => {
         {board.whites.map((white, i) => (
           <Card
             id={i} 
-            text={white.cards} 
+            text={white.cards || []} 
             owner={roster[white.playerIndex] && roster[white.playerIndex].name} 
             onClick={selectFn} 
             style={{ background: '#FFF', color: '#000', cursor: 'pointer' }} 
@@ -106,7 +106,7 @@ const NameInput = ({ self, handleJoin }) => (
     <div>
     <input
       style={{ width: '600px', maxWidth: '600px', textAlign: 'center', height: '60px', borderRadius: '8px', fontSize: '24px' }} 
-      placeholder="Type a name to join the game" 
+      placeholder="Type a name to start/join the game" 
       onKeyPress={handleJoin}
     />
     {self && self.msg && (<div className="section warning">{self && self.msg}</div>)}
@@ -116,10 +116,11 @@ const NameInput = ({ self, handleJoin }) => (
 class App extends Component {
   constructor() {
     super();
+    const urlState = querystring.parse(window.location.search.substring(1));
+    const urlName = urlState && urlState.name;
     const socket = new WebSocket(process.env.REACT_APP_SERVER_HOST || 'wss://' + window.location.host);
     socket.onopen = function() {
-      const urlState = querystring.parse(window.location.search.substring(1));
-      if (urlState.name) {
+      if (urlName) {
         this.handleJoin({ key: 'Enter', target: { value: urlState.name } });
       }
     }.bind(this);
@@ -133,6 +134,7 @@ class App extends Component {
       }
       else if (json.type === 'board') {
         this.setState({ board: json.data });
+        window.history.replaceState('', '', `?room=${json.data && json.data.gameId}${urlName ? `&name=${urlName}` : ''}`);
       }
       else if (json.type === 'join_ack') {
         this.setState({ self: json.data });
@@ -152,18 +154,19 @@ class App extends Component {
     };
   }
   handleJoin = (e) => {
+    const urlState = querystring.parse(window.location.search.substring(1));
     if (e.key === 'Enter') {
-      this.state.socket.send(JSON.stringify({ type: 'join', name: e.target.value }));
+      this.state.socket.send(JSON.stringify({ type: 'join', room: urlState.room, name: e.target.value }));
     }
   }
   handlePlay = (id) => {
-    this.state.socket.send(JSON.stringify({ type: 'play', data: id }));
+    this.state.socket.send(JSON.stringify({ type: 'play', room: this.state.board.gameId, data: id }));
   }
   handleSelect = (id) => {
-    this.state.socket.send(JSON.stringify({ type: 'select', data: id }));
+    this.state.socket.send(JSON.stringify({ type: 'select', room: this.state.board.gameId, data: id }));
   }
   handleAdvance = () => {
-    this.state.socket.send(JSON.stringify({ type: 'advance' }));
+    this.state.socket.send(JSON.stringify({ type: 'advance', room: this.state.board.gameId }));
   }
   render() {
     const { self, board, roster, hand } = this.state;
