@@ -3,10 +3,10 @@ import querystring from 'querystring';
 import logo from './logo.svg';
 import './App.css';
 
-const Card = ({ socket, text, type, id, playable, onClick, style, pick, owner }) => {
+const Card = ({ socket, text, type, id, playable, onClick, style, pick, owner, winner }) => {
   return (<div key={id}
     style={style}
-    className={"cards"}
+    className={[winner ? 'winner' : '', 'cards'].filter(Boolean).join(' ')}
     onClick={() => onClick(id)}
   >
   {text.map(t => (<div style={{ padding: '4px 0px' }}>{decodeEntities(t)}</div>))}
@@ -16,7 +16,7 @@ const Card = ({ socket, text, type, id, playable, onClick, style, pick, owner })
 };
 
 const Roster = ({ roster, self }) => {
-  return (<div className="section info" style={{ width: '20%' }}>
+  return (<div className="section info" style={{ flexGrow: 1 }}>
     <h3>Players</h3>
     <div>
       {roster.map(p => (
@@ -32,12 +32,10 @@ const Roster = ({ roster, self }) => {
   </div>);
 };
 
-//TODO optimize for mobile
-//TODO fix vertical overflow
-//TODO hover effect on hand
 //TODO invite friends link
 //TODO github link
 //TODO render empty card placeholders
+//TODO new game button
 const Hand = ({ hand, self, board, playFn }) => {
   return (<div className="section dark">
     <h3>Hand</h3>
@@ -47,14 +45,13 @@ const Hand = ({ hand, self, board, playFn }) => {
   </div>);
 };
 
-//TODO glow effect on the winner
 const Board = ({ roster, board, selectFn }) => {
   return (
-    <div className="section success" style={{ width: '80%' }}>
+    <div className="section success" style={{ flexGrow: 1, width: '75%' }}>
       <h3>
       Board
       </h3>
-      <div style={{ display: 'flex' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap' }}>
         {board.black && board.black.text && <Card text={[board.black.text]} pick={board.black.pick} style={{ background: '#000', color: "#FFF" }} />}
         {board.whites.map((white, i) => (
           <Card
@@ -62,7 +59,8 @@ const Board = ({ roster, board, selectFn }) => {
             text={white.cards || []} 
             owner={roster[white.playerIndex] && roster[white.playerIndex].name} 
             onClick={selectFn} 
-            style={{ background: '#FFF', color: '#000', cursor: 'pointer' }} 
+            style={{ background: '#FFF', color: '#000', cursor: 'pointer' }}
+            winner={white.winner}
           />))}
       </div>
     </div>);
@@ -189,7 +187,7 @@ class App extends Component {
               <GameStatus roster={roster} board={board} handleAdvance={this.handleAdvance} self={self} />
               <Deck board={board} />
             </div>
-            <div style={{ display: 'flex' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap' }}>
               <Roster roster={roster} self={self} />
               <Board roster={roster} board={this.state.board} selectFn={this.handleSelect} />
             </div>

@@ -1,8 +1,6 @@
 const WebSocket = require('ws');
 const cards = require('../data/cards.json');
-// TODO implement multiple games
 // TODO allow spectating
-// TODO shareable urls to join rooms
 // TODO support deck selection
 // TODO handle disconnects, don't wait for DC'd players and don't pick them as judge
 // TODO handle players connecting after game start (reject or deal them in?)
@@ -75,6 +73,7 @@ class Game {
     updateHand(ws);
     ws.once('close', function() {
       updateRoster();
+      updateBoard();
     });
   }
 
@@ -82,7 +81,9 @@ class Game {
     const { players, board, updateHand, updateRoster, updateBoard } = this;
     const cardIndex = json.data;
     const playerIndex = players.indexOf(ws);
-    if (ws.id !== board.judge) {
+    // Judge can't play
+    // Don't allow cards to be played if we are in the selection stage already (allplayersready)
+    if (ws.id !== board.judge && !board.allPlayersReady) {
       let playerWhites = board.whites.find(w => w.playerIndex === playerIndex);
       if (!playerWhites) {
         playerWhites = { playerIndex, cards: [] };
@@ -224,7 +225,7 @@ class Game {
 
 function checkAllPlayersReady(players) {
   for (let i = 0; i < players.length; i++) {
-    if (players[i].status !== 'played') {
+    if (players[i].status !== 'played' && players[i].readyState === WebSocket.OPEN) {
       return false;
     }
   }
