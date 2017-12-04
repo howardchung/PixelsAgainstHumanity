@@ -3,10 +3,10 @@ import querystring from 'querystring';
 import logo from './logo.svg';
 import './App.css';
 
-const Card = ({ socket, text, type, id, playable, onClick, style, pick, owner, winner }) => {
+const Card = ({ socket, text, type, id, playable, onClick, style, pick, owner, winner, pickable }) => {
   return (<div key={id}
     style={style}
-    className={[winner ? 'winner' : '', 'cards'].filter(Boolean).join(' ')}
+    className={[winner ? 'winner' : '', pickable ? 'pickable' : '', 'cards'].filter(Boolean).join(' ')}
     onClick={() => onClick(id)}
   >
   {text.map(t => (<div style={{ padding: '4px 0px' }}>{decodeEntities(t)}</div>))}
@@ -25,7 +25,7 @@ const Roster = ({ roster, self }) => {
           <span className="filled-circle" style={{ background: p.readyState === 1 ? '#00ff00' : '#ff0000' }} />
           {`${p.name}`}
         </div>
-        <div>{p.score + ' points'}</div>
+        <div>{p.score + 'p'}</div>
         {/*<div>{p.status}</div>*/}
       </div>))}
     </div>
@@ -40,12 +40,12 @@ const Hand = ({ hand, self, board, playFn }) => {
   return (<div className="section dark">
     <h3>Hand</h3>
     <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '700px', margin: '0 auto', opacity: self.id === board.judge ? 0.5 : 1 }}>
-      {hand.map((card, index) => (<Card key={card} text={[card]} id={index} onClick={playFn} style={{ background: '#FFF', color: '#000', cursor: 'pointer' }} />))}
+      {hand.map((card, index) => (<Card key={card} text={[card]} id={index} onClick={playFn} pickable={self.id !== board.judge} style={{ background: '#FFF', color: '#000', cursor: 'pointer' }} />))}
     </div>
   </div>);
 };
 
-const Board = ({ roster, board, selectFn }) => {
+const Board = ({ roster, board, self, selectFn }) => {
   return (
     <div className="section success" style={{ flexGrow: 1, width: '75%' }}>
       <h3>
@@ -61,6 +61,7 @@ const Board = ({ roster, board, selectFn }) => {
             onClick={selectFn} 
             style={{ background: '#FFF', color: '#000', cursor: 'pointer' }}
             winner={white.winner}
+            pickable={self.id === board.judge}
           />))}
       </div>
     </div>);
@@ -189,7 +190,7 @@ class App extends Component {
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap' }}>
               <Roster roster={roster} self={self} />
-              <Board roster={roster} board={this.state.board} selectFn={this.handleSelect} />
+              <Board roster={roster} board={board} self={self} selectFn={this.handleSelect} />
             </div>
             <Hand hand={hand} self={self} board={board} playFn={this.handlePlay} />
           </div>) : <NameInput self={self} handleJoin={this.handleJoin} />}

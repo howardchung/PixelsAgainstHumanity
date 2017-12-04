@@ -44,14 +44,17 @@
   position: relative;
   font-family: Arial, Helvetica, sans-serif;
   flex: 0 0 auto;
-  transition: all .2s ease-in-out;
 }
 
 .winner {
   box-shadow: 0px 0px 5px 5px #ff0;
 }
 
-.cards:hover {
+.pickable {
+  transition: all .2s ease-in-out;
+}
+
+.pickable:hover {
   transform: scale(1.1);
 }
 

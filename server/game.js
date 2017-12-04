@@ -1,12 +1,11 @@
 const WebSocket = require('ws');
 const cards = require('../data/cards.json');
-// TODO allow spectating
 // TODO support deck selection
-// TODO handle disconnects, don't wait for DC'd players and don't pick them as judge
-// TODO handle players connecting after game start (reject or deal them in?)
+// TODO handle judge DC
 // TODO handle game end (track winners?)
 // TODO track card stats
 // TODO clean up finished games
+// TODO add skip turn button if judge is disconnected
 
 class Game {
   constructor(wss, gameId) {
@@ -27,6 +26,7 @@ class Game {
       white_remaining: this.white.length,
       selected: false,
       allPlayersReady: false,
+      picking: false,
     };
     this.runTurn = this.runTurn.bind(this);
     this.updateBoard = this.updateBoard.bind(this);
@@ -64,7 +64,7 @@ class Game {
       ws.score = 0;
       ws.hand = [];
       ws.id = players.length + 1;
-      ws.status = null;
+      ws.status = 'played';
       players.push(ws);
     }
     wss.send(ws, JSON.stringify({ type: 'join_ack', data: { id: ws.id, name: ws.name } }));
@@ -139,6 +139,7 @@ class Game {
       ...this.board,
       selected: false,
       allPlayersReady: false,
+      picking: false,
       black: black.pop(),
       whites: [],
       _whiteMappings: {},
@@ -151,7 +152,7 @@ class Game {
       white_remaining: white.length,
     };
     players.forEach(p => {
-      if (p.id === this.board.judge) {
+      if (p.id === this.board.judge || p.readyState !== WebSocket.OPEN) {
         p.status = 'played';
       }
       else {
@@ -197,12 +198,15 @@ class Game {
       // Do nothing to the data
     }
     else if (checkAllPlayersReady(players)) {
-      // Hide the identities, but show the cards so the judge can pick (scramble the cards)
-      shuffle(board.whites);
-      // Map the scrambled IDs to the player indexes so we can look up who won later
-      board.whites.forEach((w, i) => {
-        board._whiteMappings[i] = w.playerIndex;
-      });
+      if (!board.picking) {
+        board.picking = true;
+        // Hide the identities, but show the cards so the judge can pick (scramble the cards)
+        shuffle(board.whites);
+        // Map the scrambled IDs to the player indexes so we can look up who won later
+        board.whites.forEach((w, i) => {
+          board._whiteMappings[i] = w.playerIndex;
+        });
+      }
       const hiddenWhites = board.whites.map(w => ({ cards: w.cards }));
       newBoard = { ...board, allPlayersReady: true, whites: hiddenWhites };
     }
