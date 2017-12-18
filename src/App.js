@@ -15,14 +15,14 @@ const Card = ({ socket, text, type, id, playable, onClick, style, pick, owner, w
   </div>);
 };
 
-const Roster = ({ roster, self }) => {
+const Roster = ({ roster, self, board }) => {
   return (<div className="section info" style={{ flexGrow: 1 }}>
     <h3>Players</h3>
     <div>
       {roster.map(p => (
       <div key={p.name} style={{ display: 'flex', justifyContent: 'space-between', height: '30px', fontWeight: p.id === self.id ? 700 : 400 }}>
         <div>
-          <span className="filled-circle" style={{ background: p.readyState === 1 ? '#00ff00' : '#ff0000' }} />
+          <span className={[board.judge === p.id ? 'winner' : 'standard', 'filled-circle'].filter(Boolean).join(' ')} style={{ background: p.readyState === 1 ? '#00ff00' : '#ff0000' }} />
           {`${p.name}`}
         </div>
         <div>{p.score + 'p'}</div>
@@ -32,10 +32,6 @@ const Roster = ({ roster, self }) => {
   </div>);
 };
 
-//TODO invite friends link
-//TODO github link
-//TODO render empty card placeholders
-//TODO new game button
 const Hand = ({ hand, self, board, playFn }) => {
   return (<div className="section dark">
     <h3>Hand</h3>
@@ -74,11 +70,11 @@ const Deck = ({ board }) => {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between'}}>
         <div>Black cards</div>
-        <div>{board.black_remaining}</div>
+        <div>{board.blackRemaining}</div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between'}}>
         <div>White cards</div>
-        <div>{board.white_remaining}</div>
+        <div>{board.whiteRemaining}</div>
       </div>
       {/*<Card text={board.black_remaining} style={{ background: '#000', color: "#FFF" }} />*/}
       {/*<Card text={board.white_remaining} style={{ background: '#FFF' }} />*/}
@@ -172,28 +168,40 @@ class App extends Component {
     console.log(this.state);
     return (
       <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <div className="title">Pixels Versus Society</div>
-          <div className="subtitle">A Cards Against Humanity clone.</div>
-        </header>
+        <a style={{ textDecoration: 'none' }} href="/">
+          <header className="App-header">
+            <img src={logo} className="App-logo" alt="logo" />
+            <div className="title">Pixels Versus Society</div>
+            <div className="subtitle">A Cards Against Humanity clone.</div>
+          </header>
+        </a>
         <div className="Game">
           {self && self.id ? (<div>
             {(<div style={{ display: 'flex', justifyContent: 'center'}}>
+              {/*
+              <a style={{ textDecoration: 'none' }} className="button" href="/">
+                {'Create New Game'}
+              </a>
+              */}
               <button className="button" onClick={this.handleAdvance} disabled={!((board.judge === 0 && roster.length >= 3) || (self.id === board.judge && board.selected))}>
                 {board.judge === 0 ? 'Start Game' : 'Next Turn'}
-                </button>
+              </button>
              </div>)}
+            {board.judge === 0 && <div className="section primary">
+              <h3>Invite your friends!</h3>
+              <div>{window.location.toString()}</div>
+            </div>}
             <div style={{ display: 'flex' }}>
               <GameStatus roster={roster} board={board} handleAdvance={this.handleAdvance} self={self} />
               <Deck board={board} />
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-              <Roster roster={roster} self={self} />
+              <Roster roster={roster} self={self} board={board} />
               <Board roster={roster} board={board} self={self} selectFn={this.handleSelect} />
             </div>
             <Hand hand={hand} self={self} board={board} playFn={this.handlePlay} />
           </div>) : <NameInput self={self} handleJoin={this.handleJoin} />}
+        <div className="section warning">An <a href="https://github.com/howardchung/pixelsversussociety">open source</a> project.</div>
         </div>
       </div>
     );

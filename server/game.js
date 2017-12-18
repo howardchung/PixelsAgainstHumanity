@@ -1,11 +1,10 @@
 const WebSocket = require('ws');
 const cards = require('../data/cards.json');
 // TODO support deck selection
-// TODO handle judge DC
+// TODO if judge DCs during round, advance automatically
 // TODO handle game end (track winners?)
 // TODO track card stats
 // TODO clean up finished games
-// TODO add skip turn button if judge is disconnected
 
 class Game {
   constructor(wss, gameId) {
@@ -25,7 +24,6 @@ class Game {
       black_remaining: this.black.length,
       white_remaining: this.white.length,
       selected: false,
-      allPlayersReady: false,
       picking: false,
     };
     this.runTurn = this.runTurn.bind(this);
@@ -55,7 +53,8 @@ class Game {
       ws.score = existingPlayer.score;
       ws.hand = existingPlayer.hand;
       ws.id = existingPlayer.id;
-      ws.status = existingPlayer.status;
+      // Rejoining players can't play until next round
+      ws.status = 'played';
       players[existingIndex] = ws;
     }
     else if (!existingPlayer) {
@@ -82,8 +81,8 @@ class Game {
     const cardIndex = json.data;
     const playerIndex = players.indexOf(ws);
     // Judge can't play
-    // Don't allow cards to be played if we are in the selection stage already (allplayersready)
-    if (ws.id !== board.judge && !board.allPlayersReady) {
+    // Don't allow cards to be played if we are in the selection stage already
+    if (ws.id !== board.judge && !board.picking && ws.status !== 'played') {
       let playerWhites = board.whites.find(w => w.playerIndex === playerIndex);
       if (!playerWhites) {
         playerWhites = { playerIndex, cards: [] };
@@ -114,6 +113,8 @@ class Game {
     const card = board.whites[index];
     //check that there hasn't been a winner selected this turn
     //make sure this player is judge
+    console.log(board._whiteMappings);
+    console.log('isJudge: %s, allReady: %s, !selected: %s, player: %s, card: %s', ws.id === board.judge, checkAllPlayersReady(players), !board.selected, player, card);
     if (ws.id === board.judge && checkAllPlayersReady(players) && !board.selected && player && card) {
       player.score += 1;
       card.winner = true;
@@ -135,21 +136,25 @@ class Game {
     const { players, white, black, updateHand, updateRoster, updateBoard } = this;
     // restore cards to hands
     replenish(players, white);
+    // Don't select a disconnected player as judge
+    let nextJudge = (this.board.judge + 1) % players.length + 1;
+    while (players[nextJudge - 1].readyState !== WebSocket.OPEN && nextJudge !== this.board.judge) {
+      nextJudge = (nextJudge + 1) % (players.length) + 1;
+    }
     this.board = {
       ...this.board,
       selected: false,
-      allPlayersReady: false,
       picking: false,
       black: black.pop(),
       whites: [],
       _whiteMappings: {},
       //judge becomes next player
-      judge: (this.board.judge + 1) % (players.length + 1),
+      judge: nextJudge,
       //increment turn number
       turn: this.board.turn + 1,
       //count number of cards remaining in play
-      black_remaining: black.length,
-      white_remaining: white.length,
+      blackRemaining: black.length,
+      whiteRemaining: white.length,
     };
     players.forEach(p => {
       if (p.id === this.board.judge || p.readyState !== WebSocket.OPEN) {
@@ -208,11 +213,10 @@ class Game {
         });
       }
       const hiddenWhites = board.whites.map(w => ({ cards: w.cards }));
-      newBoard = { ...board, allPlayersReady: true, whites: hiddenWhites };
-    }
-    else {
+      newBoard = { ...board, whites: hiddenWhites, _whiteMappings: undefined };
+    } else {
       // Hide the cards, but show the identities so we know who moved
-      newBoard = { ...board, whites: board.whites.map(w => ({ playerIndex: w.playerIndex })) };
+      newBoard = { ...board, _whiteMappings: undefined, whites: board.whites.map(w => ({ playerIndex: w.playerIndex })) };
     }
     const boardMsg = JSON.stringify({ type: 'board', data: newBoard });
     if (socket) {
