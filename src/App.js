@@ -106,7 +106,7 @@ const NameInput = ({ self, handleJoin }) => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
     <div>
     <input
-      style={{ width: '600px', maxWidth: '600px', textAlign: 'center', height: '60px', borderRadius: '8px', fontSize: '24px' }} 
+      style={{ width: '20em', textAlign: 'center', height: '60px', borderRadius: '8px', fontSize: '18px' }} 
       placeholder="Type a name to start/join the game" 
       onKeyPress={handleJoin}
     />
