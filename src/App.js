@@ -173,6 +173,7 @@ class App extends Component {
     const urlState = querystring.parse(window.location.search.substring(1));
     // const urlName = urlState && urlState.name;
     const urlRoom = urlState && urlState.room;
+    const inviteUrl = window.location.origin + "?room=" + urlRoom;
     const { self, board, roster, hand } = this.state;
     return (
       <div className="App">
@@ -196,7 +197,7 @@ class App extends Component {
              </div>)}
             {board.judge === 0 && <div className="section primary">
               <h3>Invite your friends!</h3>
-              <div>{window.location.origin + "?room=" + urlRoom}</div>
+              <a href={inviteUrl} target="_blank">{inviteUrl}</a>
             </div>}
             <div style={{ display: 'flex' }}>
               <GameStatus roster={roster} board={board} handleAdvance={this.handleAdvance} self={self} />
