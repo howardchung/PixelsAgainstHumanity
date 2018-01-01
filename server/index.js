@@ -8,7 +8,7 @@ const Moniker = require('moniker');
 const names = Moniker.generator([Moniker.adjective, Moniker.noun, Moniker.verb]);
 const Game = require('./game');
 
-app.use(express.static(path.resolve(__dirname, 'build')));
+app.use(express.static('build'));
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
