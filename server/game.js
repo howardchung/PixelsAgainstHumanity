@@ -1,14 +1,18 @@
 const WebSocket = require('ws');
 const cards = require('../data/cards.json');
-// TODO support deck selection
-// TODO if judge DCs during round, advance automatically
-// TODO handle game end (track winners?)
 // TODO track card stats
-// TODO clean up finished games
 
 class Game {
-  constructor(wss, gameId) {
-    const deck = cards['Base'];
+  constructor(wss, gameId, type = 'Base') {
+    let deck;
+    if (type === 'Expansion') {
+      deck = {
+        black: cards['Base'].black.concat(cards['CAHe1'].black).concat(cards['CAHe2'].black).concat(cards['CAHe3'].black).concat(cards['CAHe4'].black).concat(cards['CAHe5'].black).concat(cards['CAHe6'].black),
+        white: cards['Base'].white.concat(cards['CAHe1'].white).concat(cards['CAHe2'].white).concat(cards['CAHe3'].white).concat(cards['CAHe4'].white).concat(cards['CAHe5'].white).concat(cards['CAHe6'].white),
+      };
+    } else {
+      deck = cards['Base'];
+    }
     this.black = deck.black.map(index => cards.blackCards[index]).filter(card => card.pick > 0);
     this.white = deck.white.map(index => cards.whiteCards[index]);
     this.players = [];
@@ -39,7 +43,7 @@ class Game {
   }
 
   join(ws) {
-    const { players, wss, updateRoster, updateBoard, updateHand } = this;
+    const { players, wss, updateRoster, updateBoard, updateHand, runTurn } = this;
     // check if there's already a player with this name in the room
     const existingIndex = players.findIndex(p => p.name === ws.name);
     const existingPlayer = players[existingIndex];
@@ -71,6 +75,11 @@ class Game {
     updateBoard(ws);
     updateHand(ws);
     ws.once('close', function() {
+      const { board } = this;
+      // If judge, advance the turn
+      if (board && ws.id === board.judge) {
+        runTurn();
+      }
       updateRoster();
       updateBoard();
     });
@@ -82,7 +91,7 @@ class Game {
     const playerIndex = players.indexOf(ws);
     // Judge can't play
     // Don't allow cards to be played if we are in the selection stage already
-    if (ws.id !== board.judge && !board.picking && ws.status !== 'played') {
+    if (!this.gameOver && ws.id !== board.judge && !board.picking && ws.status !== 'played') {
       let playerWhites = board.whites.find(w => w.playerIndex === playerIndex);
       if (!playerWhites) {
         playerWhites = { playerIndex, cards: [] };
@@ -115,7 +124,7 @@ class Game {
     //make sure this player is judge
     console.log(board._whiteMappings);
     console.log('isJudge: %s, allReady: %s, !selected: %s, player: %s, card: %s', ws.id === board.judge, checkAllPlayersReady(players), !board.selected, player, card);
-    if (ws.id === board.judge && checkAllPlayersReady(players) && !board.selected && player && card) {
+    if (!this.gameOver && ws.id === board.judge && checkAllPlayersReady(players) && !board.selected && player && card) {
       player.score += 1;
       card.winner = true;
       board.selected = true;
@@ -126,7 +135,7 @@ class Game {
 
   handleAdvance(ws, json) {
     const { board, players, runTurn } = this;
-    if ((board.judge === 0 && players.length >= 3) || (ws.id === board.judge && board.selected)) {
+    if ((!this.gameOver && board.judge === 0 && players.length >= 3) || (ws.id === board.judge && board.selected)) {
       runTurn();
     }
   }
@@ -134,8 +143,15 @@ class Game {
   runTurn() {
     console.log('advancing turn in room %s', this.board.gameId);
     const { players, white, black, updateHand, updateRoster, updateBoard } = this;
+    
+    // Game ended (no black or no white)
+    if (white.length <= players.length || black.length < 1) {
+      this.gameOver = true;
+    }
+    
     // restore cards to hands
     replenish(players, white);
+
     // Don't select a disconnected player as judge
     let nextJudge = (this.board.judge + 1) % players.length + 1;
     while (players[nextJudge - 1].readyState !== WebSocket.OPEN && nextJudge !== this.board.judge) {
@@ -155,6 +171,7 @@ class Game {
       //count number of cards remaining in play
       blackRemaining: black.length,
       whiteRemaining: white.length,
+      gameOver: this.gameOver,
     };
     players.forEach(p => {
       if (p.id === this.board.judge || p.readyState !== WebSocket.OPEN) {

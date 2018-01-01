@@ -7,7 +7,12 @@ const Card = ({ socket, text, type, id, playable, onClick, style, pick, owner, w
   return (<div key={id}
     style={style}
     className={[winner ? 'winner' : '', pickable ? 'pickable' : '', 'cards'].filter(Boolean).join(' ')}
-    onClick={() => onClick(id)}
+    onClick={() => { 
+      if (onClick) {
+        onClick(id);
+      }
+    }
+    }
   >
   {text.map(t => (<div style={{ padding: '4px 0px' }}>{decodeEntities(t)}</div>))}
   {pick && <div className="alignBottom">Pick {pick}</div>}
@@ -89,9 +94,10 @@ const GameStatus = ({ self, roster, board, handleAdvance }) => {
     <div style={{ textAlign: 'left' }}>
       <h3>Status</h3>
       {board.judge === 0 && <span>Waiting for game start (3 players minimum)...</span>}
-      {judge && board.selected && <span>{judge.name} picked the winner! Waiting for {judge.name} to advance to the next turn...</span>}
-      {judge && !board.selected && !board.allPlayersReady && <span>{judge.name} is judge. Waiting for players to play cards...</span>}
-      {judge && !board.selected && board.allPlayersReady && <span>All players played! Waiting for {judge.name} to pick the winner...</span>}
+      {board.gameOver && <span>Game over.</span>}
+      {!board.gameOver && judge && board.selected && <span>{judge.name} picked the winner! Waiting for {judge.name} to advance to the next turn...</span>}
+      {!board.gameOver && judge && !board.selected && !board.allPlayersReady && <span>{judge.name} is judge. Waiting for players to play cards...</span>}
+      {!board.gameOver && judge && !board.selected && board.allPlayersReady && <span>All players played! Waiting for {judge.name} to pick the winner...</span>}
     </div>
   </div>);
 };
@@ -151,7 +157,7 @@ class App extends Component {
   handleJoin = (e) => {
     const urlState = querystring.parse(window.location.search.substring(1));
     if (e.key === 'Enter') {
-      this.state.socket.send(JSON.stringify({ type: 'join', room: urlState.room, name: e.target.value }));
+      this.state.socket.send(JSON.stringify({ type: 'join', room: urlState.room, name: e.target.value, gameType: 'Base' }));
     }
   }
   handlePlay = (id) => {
@@ -164,15 +170,16 @@ class App extends Component {
     this.state.socket.send(JSON.stringify({ type: 'advance', room: this.state.board.gameId }));
   }
   render() {
+    const urlState = querystring.parse(window.location.search.substring(1));
+    // const urlName = urlState && urlState.name;
+    const urlRoom = urlState && urlState.room;
     const { self, board, roster, hand } = this.state;
-    console.log(this.state);
     return (
       <div className="App">
         <a style={{ textDecoration: 'none' }} href="/">
           <header className="App-header">
             <img src={logo} className="App-logo" alt="logo" />
             <div className="title">Pixels Versus Society</div>
-            <div className="subtitle">A Cards Against Humanity clone.</div>
           </header>
         </a>
         <div className="Game">
@@ -189,7 +196,7 @@ class App extends Component {
              </div>)}
             {board.judge === 0 && <div className="section primary">
               <h3>Invite your friends!</h3>
-              <div>{window.location.toString()}</div>
+              <div>{window.location.origin + "?room=" + urlRoom}</div>
             </div>}
             <div style={{ display: 'flex' }}>
               <GameStatus roster={roster} board={board} handleAdvance={this.handleAdvance} self={self} />

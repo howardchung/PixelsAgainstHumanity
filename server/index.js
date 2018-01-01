@@ -4,6 +4,8 @@ const app = express();
 const WebSocket = require('ws');
 const http = require('http');
 const uuidv1 = require('uuid/v1');
+const Moniker = require('moniker');
+const names = Moniker.generator([Moniker.adjective, Moniker.noun, Moniker.verb]);
 const Game = require('./game');
 
 app.use(express.static(path.resolve(__dirname, 'build')));
@@ -54,10 +56,15 @@ wss.on('connection', function connection(ws) {
         }
         else {
           // Create a new game room and join it
-          const gameId = json.room || uuidv1();
+          let gameId;
+          while (!gameId || rooms.get(gameId)) {
+            gameId = json.room || names.choose();
+          }
           console.log('creating new game room %s', gameId);
-          rooms.set(gameId, new Game(wss, gameId));
+          rooms.set(gameId, new Game(wss, gameId, json.gameType));
           rooms.get(gameId).join(ws);
+          // Clean up this room after 6 hours
+          setTimeout(() => rooms.delete(gameId), 1000 * 60 * 60 * 6);
         }
       } else if (existingRoom && json.type === 'play') {
         existingRoom.handlePlay(ws, json);
