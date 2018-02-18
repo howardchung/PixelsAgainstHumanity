@@ -9,7 +9,8 @@
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject",
     "server": "node server/index.js",
-    "dev": "nodemon server/index.js  --ignore src/"
+    "dev": "nodemon server/index.js  --ignore src/",
+    "pm2": "PORT=3002 pm2 start server/index.js --name pvs"
   },
   "author": "Howard Chung",
   "license": "ISC",
