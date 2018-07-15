@@ -152,11 +152,14 @@ class Game {
     // restore cards to hands
     replenish(players, white);
 
+    let nextJudge = this.board.judge;
     // Don't select a disconnected player as judge
-    let nextJudge = (this.board.judge + 1) % players.length + 1;
-    while (players[nextJudge - 1].readyState !== WebSocket.OPEN && nextJudge !== this.board.judge) {
-      nextJudge = (nextJudge + 1) % (players.length) + 1;
+    let nextJudgeCandidate = players.find(pl => pl.readyState === WebSocket.OPEN && pl.id > this.board.judge);
+    if (!nextJudgeCandidate) {
+      nextJudgeCandidate = players.find(pl => pl.readyState === WebSocket.OPEN && pl.id > 0);
     }
+    // TODO what if there are no eligible players to judge? end the game, or try again whenever a player reconnects?
+    nextJudge = nextJudgeCandidate.id;
     this.board = {
       ...this.board,
       selected: false,
