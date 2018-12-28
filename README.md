@@ -1,4 +1,4 @@
-Pixels Versus Society
+Pixels Against Humanity
 ====
 An implementation of Cards Against Humanity in Node.js for online multiplayer.
 
