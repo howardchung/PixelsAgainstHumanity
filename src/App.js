@@ -119,7 +119,8 @@ class App extends Component {
     super();
     const urlState = querystring.parse(window.location.search.substring(1));
     const urlName = urlState && urlState.name;
-    const socket = new WebSocket(process.env.REACT_APP_SERVER_HOST || 'wss://' + window.location.host);
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const socket = new WebSocket(process.env.REACT_APP_SERVER_HOST || protocol + '//' + window.location.host);
     socket.onopen = function() {
       if (urlName) {
         this.handleJoin({ key: 'Enter', target: { value: urlState.name } });
