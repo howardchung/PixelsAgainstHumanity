@@ -181,7 +181,7 @@ class App extends Component {
         <a style={{ textDecoration: 'none' }} href="/">
           <header className="App-header">
             <img src={logo} className="App-logo" alt="logo" />
-            <div className="title">Pixels Versus Humanity</div>
+            <div className="title">Pixels Against Humanity</div>
           </header>
         </a>
         <div className="Game">
@@ -210,7 +210,7 @@ class App extends Component {
             </div>
             <Hand hand={hand} self={self} board={board} playFn={this.handlePlay} />
           </div>) : <NameInput self={self} handleJoin={this.handleJoin} />}
-        <div className="section warning">An <a href="https://github.com/howardchung/pixelsversushumanity">open source</a> project.</div>
+        <div className="section warning">An <a href="https://github.com/howardchung/pixelsagainsthumanity">open source</a> project.</div>
         </div>
       </div>
     );
