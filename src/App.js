@@ -103,15 +103,14 @@ const GameStatus = ({ self, roster, board, handleAdvance }) => {
 };
 
 const NameInput = ({ self, handleJoin }) => (
-  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-    <div>
+  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+    {self && self.msg && (<div className="section warning">{self && self.msg}</div>)}
     <input
       style={{ width: '20em', textAlign: 'center', height: '60px', borderRadius: '8px', fontSize: '18px' }} 
       placeholder="Type a name to start/join the game" 
       onKeyPress={handleJoin}
     />
-    {self && self.msg && (<div className="section warning">{self && self.msg}</div>)}
-    </div>
+    <button className="button" style={{ width: '23em', marginTop: '1em' }} onClick={handleJoin}>Join</button>
   </div>);
 
 class App extends Component {
@@ -180,7 +179,6 @@ class App extends Component {
       <div className="App">
         <a style={{ textDecoration: 'none' }} href="/">
           <header className="App-header">
-            <img src={logo} className="App-logo" alt="logo" />
             <div className="title">Pixels Against Humanity</div>
           </header>
         </a>
