@@ -102,15 +102,16 @@ const GameStatus = ({ self, roster, board, handleAdvance }) => {
   </div>);
 };
 
-const NameInput = ({ self, handleJoin }) => (
+const NameInput = ({ self, updateName, handleJoin }) => (
   <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
     {self && self.msg && (<div className="section warning">{self && self.msg}</div>)}
     <input
       style={{ width: '20em', textAlign: 'center', height: '60px', borderRadius: '8px', fontSize: '18px' }} 
-      placeholder="Type a name to start/join the game" 
-      onKeyPress={handleJoin}
+      placeholder="Type a name to start/join the game"
+      onChange={updateName}
+      onKeyPress={(e) => e.key === 'Enter' && handleJoin()}
     />
-    <button className="button" style={{ width: '23em', marginTop: '1em' }} onClick={(e) => handleJoin(e, true)}>Join</button>
+    <button className="button" style={{ width: '23em', marginTop: '1em' }} onClick={handleJoin}>Join</button>
   </div>);
 
 class App extends Component {
@@ -122,7 +123,7 @@ class App extends Component {
     const socket = new WebSocket(process.env.REACT_APP_SERVER_HOST || protocol + '//' + window.location.host);
     socket.onopen = function() {
       if (urlName) {
-        this.handleJoin({ key: 'Enter', target: { value: urlState.name } });
+        this.updateName({ target: { value: urlName }}, this.handleJoin);
       }
     }.bind(this);
     socket.onmessage = function(msg) {
@@ -154,11 +155,12 @@ class App extends Component {
       socket,
     };
   }
-  handleJoin = (e, forceJoin) => {
+  updateName = (e) => {
+      this.setState({ currentName: e.target.value });
+  }
+  handleJoin = () => {
     const urlState = querystring.parse(window.location.search.substring(1));
-    if (forceJoin || e.key === 'Enter') {
-      this.state.socket.send(JSON.stringify({ type: 'join', room: urlState.room, name: e.target.value, gameType: 'Base' }));
-    }
+    this.state.socket.send(JSON.stringify({ type: 'join', room: urlState.room, name: this.state.currentName, gameType: 'Base' }));
   }
   handlePlay = (id) => {
     this.state.socket.send(JSON.stringify({ type: 'play', room: this.state.board.gameId, data: id }));
@@ -207,7 +209,7 @@ class App extends Component {
               <Board roster={roster} board={board} self={self} selectFn={this.handleSelect} />
             </div>
             <Hand hand={hand} self={self} board={board} playFn={this.handlePlay} />
-          </div>) : <NameInput self={self} handleJoin={this.handleJoin} />}
+          </div>) : <NameInput self={self} updateName={this.updateName} handleJoin={this.handleJoin} />}
         <div className="section warning">An <a href="https://github.com/howardchung/pixelsagainsthumanity">open source</a> project.</div>
         </div>
       </div>
