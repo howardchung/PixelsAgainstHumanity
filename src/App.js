@@ -110,7 +110,7 @@ const NameInput = ({ self, handleJoin }) => (
       placeholder="Type a name to start/join the game" 
       onKeyPress={handleJoin}
     />
-    <button className="button" style={{ width: '23em', marginTop: '1em' }} onClick={handleJoin}>Join</button>
+    <button className="button" style={{ width: '23em', marginTop: '1em' }} onClick={(e) => handleJoin(e, true)}>Join</button>
   </div>);
 
 class App extends Component {
@@ -154,9 +154,9 @@ class App extends Component {
       socket,
     };
   }
-  handleJoin = (e) => {
+  handleJoin = (e, forceJoin) => {
     const urlState = querystring.parse(window.location.search.substring(1));
-    if (e.key === 'Enter') {
+    if (forceJoin || e.key === 'Enter') {
       this.state.socket.send(JSON.stringify({ type: 'join', room: urlState.room, name: e.target.value, gameType: 'Base' }));
     }
   }
