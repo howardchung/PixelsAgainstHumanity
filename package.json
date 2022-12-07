@@ -15,7 +15,7 @@
   "author": "Howard Chung",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.16.2",
+    "express": "^4.17.3",
     "moniker": "^0.1.2",
     "react": "^16.1.1",
     "react-dom": "^16.1.1",
