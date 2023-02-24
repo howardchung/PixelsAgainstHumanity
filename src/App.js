@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import querystring from 'querystring';
-import logo from './logo.svg';
 import './App.css';
 
 const Card = ({ socket, text, type, id, playable, onClick, style, pick, owner, winner, pickable }) => {
