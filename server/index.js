@@ -1,9 +1,7 @@
-const path = require('path');
 const express = require('express');
 const app = express();
 const WebSocket = require('ws');
 const http = require('http');
-const uuidv1 = require('uuid/v1');
 const Moniker = require('moniker');
 const names = Moniker.generator([Moniker.adjective, Moniker.noun, Moniker.verb]);
 const Game = require('./game');

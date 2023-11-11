@@ -4,26 +4,19 @@
   "description": "A Cards Against Humanity clone.",
   "main": "index.js",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject",
-    "server": "node server/index.js",
-    "dev": "nodemon server/index.js  --ignore src/",
-    "pm2": "PORT=3002 pm2 start server/index.js --name pvs"
+    "dev": "vite --host",
+    "build": "vite build",
+    "server": "node server/index.js"
   },
   "author": "Howard Chung",
   "license": "ISC",
   "dependencies": {
     "express": "^4.16.2",
     "moniker": "^0.1.2",
+    "querystring": "^0.2.1",
     "react": "^16.1.1",
     "react-dom": "^16.1.1",
-    "react-scripts": "1.0.17",
-    "uuid": "^3.1.0",
+    "vite": "^4.5.0",
     "ws": "^3.3.2"
-  },
-  "devDependencies": {
-    "nodemon": "^1.3.7"
   }
 }

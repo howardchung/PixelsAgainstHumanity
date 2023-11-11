@@ -1,5 +1,5 @@
 const WebSocket = require('ws');
-const cards = require('../data/cards.json');
+const cards = require('./cards.json');
 // TODO track card stats
 
 class Game {
